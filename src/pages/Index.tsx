@@ -14,9 +14,13 @@ const Index = () => {
   const { uploadFile, isUploading } = useFileUpload();
 
   const handleFileUpload = async (file) => {
+    console.log('File selected for upload:', file.name, file.size, file.type);
+    
     const result = await uploadFile(file);
     
     if (result) {
+      console.log('Upload result received:', result);
+      
       // Transform the database file to match the expected format
       const transformedFile = {
         id: result.file.id,
@@ -27,8 +31,12 @@ const Index = () => {
         uploadedAt: new Date(result.file.uploaded_at)
       };
       
+      console.log('Transformed file:', transformedFile);
+      
       setUploadedFile(transformedFile);
       setShareableUrl(result.shareUrl);
+    } else {
+      console.log('Upload failed, no result returned');
     }
   };
 

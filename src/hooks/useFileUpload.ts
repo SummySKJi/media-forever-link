@@ -25,6 +25,8 @@ export const useFileUpload = (): UseFileUploadReturn => {
     setIsUploading(true);
     
     try {
+      console.log('Starting file upload:', file.name, file.size, file.type);
+      
       const formData = new FormData();
       formData.append('file', file);
 
@@ -33,11 +35,27 @@ export const useFileUpload = (): UseFileUploadReturn => {
         body: formData,
       });
 
-      const result = await response.json();
+      console.log('Upload response status:', response.status);
+      console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
 
+      // Check if response is ok before trying to parse JSON
       if (!response.ok) {
-        throw new Error(result.error || 'Upload failed');
+        const errorText = await response.text();
+        console.error('Upload failed with status:', response.status, 'Response:', errorText);
+        
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = `Server error (${response.status})`;
+        }
+        
+        throw new Error(errorMessage);
       }
+
+      const result = await response.json();
+      console.log('Upload successful:', result);
 
       toast({
         title: "Upload Successful!",
@@ -47,9 +65,15 @@ export const useFileUpload = (): UseFileUploadReturn => {
       return result;
     } catch (error) {
       console.error('Upload error:', error);
+      
+      let errorMessage = "There was an error uploading your file. Please try again.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Upload Failed",
-        description: error instanceof Error ? error.message : "There was an error uploading your file. Please try again.",
+        description: errorMessage,
         variant: "destructive"
       });
       return null;
