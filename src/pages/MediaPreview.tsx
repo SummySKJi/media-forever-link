@@ -1,50 +1,15 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, Image, Video, Music, ArrowLeft, Calendar, HardDrive } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useMediaFile } from '@/hooks/useMediaFile';
 
 const MediaPreview = () => {
   const { id } = useParams();
-  const [fileData, setFileData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    // Simulate loading file data
-    // In a real app, this would fetch from your database
-    const loadFile = async () => {
-      setLoading(true);
-      try {
-        // Mock data - replace with actual API call
-        const mockFile = {
-          id: id,
-          name: 'sample-image.jpg',
-          type: 'image/jpeg',
-          size: 2048576,
-          url: 'https://images.unsplash.com/photo-1649972904349-6e44c42644a7?w=800&h=600&fit=crop',
-          uploadedAt: new Date('2024-01-15')
-        };
-        
-        setTimeout(() => {
-          setFileData(mockFile);
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        setLoading(false);
-        toast({
-          title: "File Not Found",
-          description: "The requested file could not be found.",
-          variant: "destructive"
-        });
-      }
-    };
-
-    loadFile();
-  }, [id, toast]);
+  const { file: fileData, loading, error } = useMediaFile(id || '');
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -56,25 +21,26 @@ const MediaPreview = () => {
 
   const getFileIcon = () => {
     if (!fileData) return <FileText className="w-8 h-8 text-gray-500" />;
-    if (fileData.type.startsWith('image/')) return <Image className="w-8 h-8 text-green-500" />;
-    if (fileData.type.startsWith('video/')) return <Video className="w-8 h-8 text-red-500" />;
-    if (fileData.type.startsWith('audio/')) return <Music className="w-8 h-8 text-blue-500" />;
+    if (fileData.file_type.startsWith('image/')) return <Image className="w-8 h-8 text-green-500" />;
+    if (fileData.file_type.startsWith('video/')) return <Video className="w-8 h-8 text-red-500" />;
+    if (fileData.file_type.startsWith('audio/')) return <Music className="w-8 h-8 text-blue-500" />;
     return <FileText className="w-8 h-8 text-orange-500" />;
   };
 
   const getFileTypeLabel = () => {
     if (!fileData) return 'File';
-    if (fileData.type.startsWith('image/')) return 'Image';
-    if (fileData.type.startsWith('video/')) return 'Video';
-    if (fileData.type.startsWith('audio/')) return 'Audio';
+    if (fileData.file_type.startsWith('image/')) return 'Image';
+    if (fileData.file_type.startsWith('video/')) return 'Video';
+    if (fileData.file_type.startsWith('audio/')) return 'Audio';
     return 'Document';
   };
 
   const handleDownload = () => {
-    if (fileData && fileData.url) {
+    if (fileData && fileData.cloudinary_url) {
       const link = document.createElement('a');
-      link.href = fileData.url;
-      link.download = fileData.name;
+      link.href = fileData.cloudinary_url;
+      link.download = fileData.file_name;
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -84,23 +50,23 @@ const MediaPreview = () => {
   const renderFilePreview = () => {
     if (!fileData) return null;
 
-    if (fileData.type.startsWith('image/')) {
+    if (fileData.file_type.startsWith('image/')) {
       return (
         <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
           <img 
-            src={fileData.url} 
-            alt={fileData.name}
+            src={fileData.cloudinary_url} 
+            alt={fileData.file_name}
             className="w-full h-full object-contain"
           />
         </div>
       );
     }
 
-    if (fileData.type.startsWith('video/')) {
+    if (fileData.file_type.startsWith('video/')) {
       return (
         <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
           <video 
-            src={fileData.url} 
+            src={fileData.cloudinary_url} 
             controls
             className="w-full h-full"
           />
@@ -108,7 +74,7 @@ const MediaPreview = () => {
       );
     }
 
-    if (fileData.type.startsWith('audio/')) {
+    if (fileData.file_type.startsWith('audio/')) {
       return (
         <div className="p-8 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg">
           <div className="text-center mb-4">
@@ -116,7 +82,7 @@ const MediaPreview = () => {
             <h4 className="text-lg font-semibold text-gray-700">Audio File</h4>
           </div>
           <audio 
-            src={fileData.url} 
+            src={fileData.cloudinary_url} 
             controls
             className="w-full"
           />
@@ -148,7 +114,7 @@ const MediaPreview = () => {
     );
   }
 
-  if (!fileData) {
+  if (error || !fileData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
         <div className="text-center">
@@ -181,18 +147,18 @@ const MediaPreview = () => {
                 <div className="flex items-center space-x-3">
                   {getFileIcon()}
                   <div>
-                    <CardTitle className="text-xl">{fileData.name}</CardTitle>
+                    <CardTitle className="text-xl">{fileData.file_name}</CardTitle>
                     <div className="flex items-center space-x-4 mt-2">
                       <Badge variant="secondary">
                         {getFileTypeLabel()}
                       </Badge>
                       <div className="flex items-center space-x-1 text-sm text-gray-500">
                         <HardDrive className="w-4 h-4" />
-                        <span>{formatFileSize(fileData.size)}</span>
+                        <span>{formatFileSize(fileData.file_size)}</span>
                       </div>
                       <div className="flex items-center space-x-1 text-sm text-gray-500">
                         <Calendar className="w-4 h-4" />
-                        <span>{fileData.uploadedAt.toLocaleDateString()}</span>
+                        <span>{new Date(fileData.uploaded_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>

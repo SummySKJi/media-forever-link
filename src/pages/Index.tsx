@@ -2,52 +2,33 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Upload, Link2, Download, Eye, Clock } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Upload, Link2, Eye } from 'lucide-react';
 import FileUploadZone from '@/components/FileUploadZone';
 import FilePreview from '@/components/FilePreview';
 import ShareableLink from '@/components/ShareableLink';
+import { useFileUpload } from '@/hooks/useFileUpload';
 
 const Index = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
   const [shareableUrl, setShareableUrl] = useState('');
-  const { toast } = useToast();
+  const { uploadFile, isUploading } = useFileUpload();
 
   const handleFileUpload = async (file) => {
-    setIsUploading(true);
-    try {
-      // Simulate upload process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+    const result = await uploadFile(file);
+    
+    if (result) {
+      // Transform the database file to match the expected format
+      const transformedFile = {
+        id: result.file.id,
+        name: result.file.file_name,
+        type: result.file.file_type,
+        size: result.file.file_size,
+        url: result.file.cloudinary_url,
+        uploadedAt: new Date(result.file.uploaded_at)
+      };
       
-      // Generate a unique ID for the file
-      const uniqueId = Math.random().toString(36).substring(2, 15);
-      const generatedUrl = `${window.location.origin}/media/${uniqueId}`;
-      
-      setUploadedFile({
-        id: uniqueId,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        url: URL.createObjectURL(file),
-        uploadedAt: new Date()
-      });
-      
-      setShareableUrl(generatedUrl);
-      
-      toast({
-        title: "Upload Successful!",
-        description: "Your file has been uploaded and is ready to share.",
-      });
-    } catch (error) {
-      toast({
-        title: "Upload Failed",
-        description: "There was an error uploading your file. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsUploading(false);
+      setUploadedFile(transformedFile);
+      setShareableUrl(result.shareUrl);
     }
   };
 

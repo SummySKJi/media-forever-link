@@ -9,7 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      media_files: {
+        Row: {
+          access_link: string
+          cloudinary_public_id: string
+          cloudinary_url: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id: string
+          uploaded_at: string
+        }
+        Insert: {
+          access_link: string
+          cloudinary_public_id: string
+          cloudinary_url: string
+          file_name: string
+          file_size: number
+          file_type: string
+          id?: string
+          uploaded_at?: string
+        }
+        Update: {
+          access_link?: string
+          cloudinary_public_id?: string
+          cloudinary_url?: string
+          file_name?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          uploaded_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
