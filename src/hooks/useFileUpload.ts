@@ -27,18 +27,24 @@ export const useFileUpload = (): UseFileUploadReturn => {
     try {
       console.log('Starting file upload:', file.name, file.size, file.type);
       
+      // Validate file size on frontend too
+      const maxSize = 500 * 1024 * 1024; // 500MB
+      if (file.size > maxSize) {
+        throw new Error('File size exceeds 500MB limit');
+      }
+      
       const formData = new FormData();
       formData.append('file', file);
 
+      console.log('Calling edge function...');
+      
       const response = await fetch('/functions/v1/upload-media', {
         method: 'POST',
         body: formData,
       });
 
       console.log('Upload response status:', response.status);
-      console.log('Upload response headers:', Object.fromEntries(response.headers.entries()));
-
-      // Check if response is ok before trying to parse JSON
+      
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Upload failed with status:', response.status, 'Response:', errorText);
@@ -46,9 +52,9 @@ export const useFileUpload = (): UseFileUploadReturn => {
         let errorMessage = 'Upload failed';
         try {
           const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorMessage;
+          errorMessage = errorData.error || `Server error (${response.status})`;
         } catch (e) {
-          errorMessage = `Server error (${response.status})`;
+          errorMessage = `Server error (${response.status}): ${errorText}`;
         }
         
         throw new Error(errorMessage);
@@ -56,6 +62,10 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
       const result = await response.json();
       console.log('Upload successful:', result);
+
+      if (!result.success || !result.file) {
+        throw new Error('Invalid response from server');
+      }
 
       toast({
         title: "Upload Successful!",

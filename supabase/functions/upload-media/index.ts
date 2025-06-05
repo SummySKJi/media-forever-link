@@ -28,6 +28,16 @@ serve(async (req) => {
 
     console.log('File received:', file.name, file.size, file.type)
 
+    // Validate file size (max 500MB)
+    const maxSize = 500 * 1024 * 1024 // 500MB
+    if (file.size > maxSize) {
+      console.error('File too large:', file.size)
+      return new Response(
+        JSON.stringify({ error: 'File size exceeds 500MB limit' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Get Cloudinary credentials from secrets
     const cloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')
     const apiKey = Deno.env.get('CLOUDINARY_API_KEY')
@@ -47,12 +57,29 @@ serve(async (req) => {
       )
     }
 
-    // Upload to Cloudinary
+    // Create signature for authenticated upload
+    const timestamp = Math.round(Date.now() / 1000)
+    const publicId = `share4ever_${crypto.randomUUID()}`
+    
+    // Create signature string
+    const stringToSign = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`
+    
+    // Create signature using Web Crypto API
+    const encoder = new TextEncoder()
+    const data = encoder.encode(stringToSign)
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    // Upload to Cloudinary with authentication
     const uploadFormData = new FormData()
     uploadFormData.append('file', file)
-    uploadFormData.append('upload_preset', 'ml_default') // Using unsigned preset
+    uploadFormData.append('public_id', publicId)
+    uploadFormData.append('timestamp', timestamp.toString())
+    uploadFormData.append('api_key', apiKey)
+    uploadFormData.append('signature', signature)
     
-    console.log('Uploading to Cloudinary...')
+    console.log('Uploading to Cloudinary with signature...')
     
     const cloudinaryResponse = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
@@ -64,8 +91,19 @@ serve(async (req) => {
 
     console.log('Cloudinary response status:', cloudinaryResponse.status)
     
-    const cloudinaryData = await cloudinaryResponse.json()
-    console.log('Cloudinary response data:', cloudinaryData)
+    const responseText = await cloudinaryResponse.text()
+    console.log('Cloudinary raw response:', responseText)
+
+    let cloudinaryData
+    try {
+      cloudinaryData = JSON.parse(responseText)
+    } catch (e) {
+      console.error('Failed to parse Cloudinary response:', responseText)
+      return new Response(
+        JSON.stringify({ error: 'Invalid response from Cloudinary', details: responseText }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     if (!cloudinaryResponse.ok) {
       console.error('Cloudinary upload failed:', cloudinaryData)
