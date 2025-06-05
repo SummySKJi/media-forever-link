@@ -13,8 +13,20 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url)
-    const accessLink = url.searchParams.get('id')
+    console.log('Get media function called with method:', req.method)
+    
+    let accessLink: string | null = null;
+
+    // Handle both GET and POST requests
+    if (req.method === 'GET') {
+      const url = new URL(req.url)
+      accessLink = url.searchParams.get('id')
+    } else if (req.method === 'POST') {
+      const body = await req.json()
+      accessLink = body.id
+    }
+
+    console.log('Looking for access link:', accessLink)
 
     if (!accessLink) {
       return new Response(
@@ -28,18 +40,31 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    console.log('Querying database for access link:', accessLink)
+
     const { data, error } = await supabase
       .from('media_files')
       .select('*')
       .eq('access_link', accessLink)
       .single()
 
-    if (error || !data) {
+    if (error) {
+      console.error('Database error:', error)
       return new Response(
         JSON.stringify({ error: 'File not found' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    if (!data) {
+      console.log('No file found for access link:', accessLink)
+      return new Response(
+        JSON.stringify({ error: 'File not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    console.log('File found:', data)
 
     return new Response(
       JSON.stringify({ file: data }),
@@ -49,7 +74,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Get media error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

@@ -1,1 +1,8 @@
+
 project_id = "nwepfribozwhpzwlpiuq"
+
+[functions.upload-media]
+verify_jwt = false
+
+[functions.get-media]
+verify_jwt = false

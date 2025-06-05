@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MediaFile {
   id: string;
@@ -32,14 +33,23 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
       setError(null);
 
       try {
-        const response = await fetch(`/functions/v1/get-media?id=${accessLink}`);
-        const result = await response.json();
+        console.log('Fetching file with access link:', accessLink);
+        
+        const { data, error } = await supabase.functions.invoke('get-media', {
+          body: { id: accessLink }
+        });
 
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to fetch file');
+        console.log('Get media response:', { data, error });
+
+        if (error) {
+          throw new Error(error.message || 'Failed to fetch file');
         }
 
-        setFile(result.file);
+        if (!data || !data.file) {
+          throw new Error('File not found');
+        }
+
+        setFile(data.file);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load file';
         setError(errorMessage);

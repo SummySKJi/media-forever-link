@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UploadedFile {
   id: string;
@@ -36,34 +37,21 @@ export const useFileUpload = (): UseFileUploadReturn => {
       const formData = new FormData();
       formData.append('file', file);
 
-      console.log('Calling edge function...');
+      console.log('Calling Supabase edge function...');
       
-      const response = await fetch('/functions/v1/upload-media', {
-        method: 'POST',
+      // Use Supabase function invocation instead of direct fetch
+      const { data, error } = await supabase.functions.invoke('upload-media', {
         body: formData,
       });
 
-      console.log('Upload response status:', response.status);
+      console.log('Upload response:', { data, error });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Upload failed with status:', response.status, 'Response:', errorText);
-        
-        let errorMessage = 'Upload failed';
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || `Server error (${response.status})`;
-        } catch (e) {
-          errorMessage = `Server error (${response.status}): ${errorText}`;
-        }
-        
-        throw new Error(errorMessage);
+      if (error) {
+        console.error('Upload failed:', error);
+        throw new Error(error.message || 'Upload failed');
       }
 
-      const result = await response.json();
-      console.log('Upload successful:', result);
-
-      if (!result.success || !result.file) {
+      if (!data || !data.success || !data.file) {
         throw new Error('Invalid response from server');
       }
 
@@ -72,7 +60,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
         description: "Your file has been uploaded and is ready to share.",
       });
 
-      return result;
+      return data;
     } catch (error) {
       console.error('Upload error:', error);
       
