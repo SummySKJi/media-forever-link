@@ -14,6 +14,7 @@ serve(async (req) => {
 
   try {
     console.log('Get media function called with method:', req.method)
+    console.log('Request URL:', req.url)
     
     let accessLink: string | null = null;
 
@@ -21,14 +22,25 @@ serve(async (req) => {
     if (req.method === 'GET') {
       const url = new URL(req.url)
       accessLink = url.searchParams.get('id')
+      console.log('GET request - access link from query:', accessLink)
     } else if (req.method === 'POST') {
-      const body = await req.json()
-      accessLink = body.id
+      try {
+        const body = await req.json()
+        accessLink = body.id
+        console.log('POST request - access link from body:', accessLink)
+      } catch (e) {
+        console.error('Failed to parse request body:', e)
+        return new Response(
+          JSON.stringify({ error: 'Invalid request body' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
 
-    console.log('Looking for access link:', accessLink)
+    console.log('Final access link to search for:', accessLink)
 
     if (!accessLink) {
+      console.error('No access link provided')
       return new Response(
         JSON.stringify({ error: 'Access link required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -51,7 +63,7 @@ serve(async (req) => {
     if (error) {
       console.error('Database error:', error)
       return new Response(
-        JSON.stringify({ error: 'File not found' }),
+        JSON.stringify({ error: 'File not found', details: error.message }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -64,7 +76,7 @@ serve(async (req) => {
       )
     }
 
-    console.log('File found:', data)
+    console.log('File found successfully:', data)
 
     return new Response(
       JSON.stringify({ file: data }),

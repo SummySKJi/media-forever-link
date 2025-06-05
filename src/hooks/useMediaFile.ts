@@ -27,7 +27,10 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
 
   useEffect(() => {
     const fetchFile = async () => {
-      if (!accessLink) return;
+      if (!accessLink) {
+        setLoading(false);
+        return;
+      }
 
       setLoading(true);
       setError(null);
@@ -42,16 +45,20 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
         console.log('Get media response:', { data, error });
 
         if (error) {
+          console.error('Function invocation error:', error);
           throw new Error(error.message || 'Failed to fetch file');
         }
 
         if (!data || !data.file) {
+          console.error('No file data in response:', data);
           throw new Error('File not found');
         }
 
+        console.log('File retrieved successfully:', data.file);
         setFile(data.file);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load file';
+        console.error('useMediaFile error:', err);
         setError(errorMessage);
         toast({
           title: "File Not Found",

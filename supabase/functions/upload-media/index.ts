@@ -113,7 +113,7 @@ serve(async (req) => {
       )
     }
 
-    // Generate unique access link
+    // Generate unique access link - using only 8 characters for shorter URLs
     const accessId = crypto.randomUUID().split('-')[0]
     const accessLink = `${accessId}`
 
@@ -150,7 +150,11 @@ serve(async (req) => {
 
     console.log('File uploaded successfully:', dbData)
 
-    const shareUrl = `${new URL(req.url).origin}/media/${accessLink}`
+    // Create the correct shareable URL using the current request origin
+    const url = new URL(req.url)
+    const shareUrl = `${url.protocol}//${url.host}/media/${accessLink}`
+
+    console.log('Generated share URL:', shareUrl)
 
     return new Response(
       JSON.stringify({
