@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface MediaFile {
   id: string;
@@ -38,16 +37,24 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
       try {
         console.log('Fetching file with access link:', accessLink);
         
-        const { data, error } = await supabase.functions.invoke('get-media', {
-          body: { id: accessLink }
+        // Use direct fetch to the Edge Function with proper URL construction
+        const response = await fetch(`https://nwepfribozwhpzwlpiuq.supabase.co/functions/v1/get-media?id=${accessLink}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          }
         });
 
-        console.log('Get media response:', { data, error });
+        console.log('Response status:', response.status);
 
-        if (error) {
-          console.error('Function invocation error:', error);
-          throw new Error(error.message || 'Failed to fetch file');
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error('Function call failed:', errorData);
+          throw new Error(`HTTP ${response.status}: ${errorData}`);
         }
+
+        const data = await response.json();
+        console.log('Get media response:', data);
 
         if (!data || !data.file) {
           console.error('No file data in response:', data);
