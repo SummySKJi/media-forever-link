@@ -66,8 +66,8 @@ serve(async (req) => {
     
     // Create signature using Web Crypto API
     const encoder = new TextEncoder()
-    const data = encoder.encode(stringToSign)
-    const hashBuffer = await crypto.subtle.digest('SHA-1', data)
+    const signData = encoder.encode(stringToSign)
+    const hashBuffer = await crypto.subtle.digest('SHA-1', signData)
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 
@@ -127,7 +127,7 @@ serve(async (req) => {
 
     console.log('Saving to database...')
 
-    const { data, error } = await supabase
+    const { data: dbData, error } = await supabase
       .from('media_files')
       .insert({
         file_name: file.name,
@@ -148,14 +148,14 @@ serve(async (req) => {
       )
     }
 
-    console.log('File uploaded successfully:', data)
+    console.log('File uploaded successfully:', dbData)
 
     const shareUrl = `${new URL(req.url).origin}/media/${accessLink}`
 
     return new Response(
       JSON.stringify({
         success: true,
-        file: data,
+        file: dbData,
         shareUrl: shareUrl
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
