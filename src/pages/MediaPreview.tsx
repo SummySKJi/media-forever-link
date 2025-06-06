@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,30 @@ import { useMediaFile } from '@/hooks/useMediaFile';
 const MediaPreview = () => {
   const { id } = useParams();
   const { file: fileData, loading, error } = useMediaFile(id || '');
+
+  // Update page title and meta description when file loads
+  useEffect(() => {
+    if (fileData) {
+      document.title = `${fileData.file_name} - Share4Ever`;
+      
+      // Update meta description
+      const metaDescription = document.querySelector('meta[name="description"]');
+      if (metaDescription) {
+        metaDescription.setAttribute('content', `View and download ${fileData.file_name} - shared via Share4Ever free file sharing service.`);
+      }
+
+      // Update Open Graph tags
+      const ogTitle = document.querySelector('meta[property="og:title"]');
+      const ogDescription = document.querySelector('meta[property="og:description"]');
+      const ogImage = document.querySelector('meta[property="og:image"]');
+      
+      if (ogTitle) ogTitle.setAttribute('content', `${fileData.file_name} - Share4Ever`);
+      if (ogDescription) ogDescription.setAttribute('content', `View and download ${fileData.file_name} - shared via Share4Ever`);
+      if (ogImage && fileData.file_type.startsWith('image/')) {
+        ogImage.setAttribute('content', fileData.cloudinary_url);
+      }
+    }
+  }, [fileData]);
 
   console.log('MediaPreview - ID from params:', id);
   console.log('MediaPreview - File data:', fileData);
@@ -60,8 +84,9 @@ const MediaPreview = () => {
         <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
           <img 
             src={fileData.cloudinary_url} 
-            alt={fileData.file_name}
+            alt={`Preview of ${fileData.file_name}`}
             className="w-full h-full object-contain"
+            loading="lazy"
           />
         </div>
       );
@@ -74,6 +99,7 @@ const MediaPreview = () => {
             src={fileData.cloudinary_url} 
             controls
             className="w-full h-full"
+            preload="metadata"
           />
         </div>
       );
@@ -90,6 +116,7 @@ const MediaPreview = () => {
             src={fileData.cloudinary_url} 
             controls
             className="w-full"
+            preload="metadata"
           />
         </div>
       );
@@ -144,46 +171,50 @@ const MediaPreview = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
+        <header className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2">
             Share4Ever
           </h1>
           <p className="text-gray-600">Shared file preview</p>
-        </div>
+        </header>
 
-        <div className="max-w-4xl mx-auto">
-          <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  {getFileIcon()}
-                  <div>
-                    <CardTitle className="text-xl">{fileData.file_name}</CardTitle>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <Badge variant="secondary">
-                        {getFileTypeLabel()}
-                      </Badge>
-                      <div className="flex items-center space-x-1 text-sm text-gray-500">
-                        <HardDrive className="w-4 h-4" />
-                        <span>{formatFileSize(fileData.file_size)}</span>
-                      </div>
-                      <div className="flex items-center space-x-1 text-sm text-gray-500">
-                        <Calendar className="w-4 h-4" />
-                        <span>{new Date(fileData.uploaded_at).toLocaleDateString()}</span>
+        <main className="max-w-4xl mx-auto">
+          <article>
+            <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    {getFileIcon()}
+                    <div>
+                      <CardTitle className="text-xl" itemProp="name">{fileData.file_name}</CardTitle>
+                      <div className="flex items-center space-x-4 mt-2">
+                        <Badge variant="secondary">
+                          {getFileTypeLabel()}
+                        </Badge>
+                        <div className="flex items-center space-x-1 text-sm text-gray-500">
+                          <HardDrive className="w-4 h-4" />
+                          <span>{formatFileSize(fileData.file_size)}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-sm text-gray-500">
+                          <Calendar className="w-4 h-4" />
+                          <time dateTime={fileData.uploaded_at}>
+                            {new Date(fileData.uploaded_at).toLocaleDateString()}
+                          </time>
+                        </div>
                       </div>
                     </div>
                   </div>
+                  <Button onClick={handleDownload} className="flex items-center space-x-2">
+                    <Download className="w-4 h-4" />
+                    <span>Download</span>
+                  </Button>
                 </div>
-                <Button onClick={handleDownload} className="flex items-center space-x-2">
-                  <Download className="w-4 h-4" />
-                  <span>Download</span>
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {renderFilePreview()}
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent>
+                {renderFilePreview()}
+              </CardContent>
+            </Card>
+          </article>
 
           <div className="mt-8 text-center">
             <Button onClick={() => window.location.href = '/'} variant="outline" size="lg">
@@ -191,7 +222,7 @@ const MediaPreview = () => {
               Upload Your Own File
             </Button>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
