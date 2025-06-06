@@ -11,6 +11,11 @@ const MediaPreview = () => {
   const { id } = useParams();
   const { file: fileData, loading, error } = useMediaFile(id || '');
 
+  console.log('MediaPreview - ID from params:', id);
+  console.log('MediaPreview - File data:', fileData);
+  console.log('MediaPreview - Loading:', loading);
+  console.log('MediaPreview - Error:', error);
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -122,11 +127,11 @@ const MediaPreview = () => {
           <p className="text-gray-600 mb-4">
             The requested file could not be found. The link may be invalid or the file may have been removed.
           </p>
-          <div className="space-y-2">
+          <div className="space-y-2 mb-4">
             <p className="text-sm text-gray-500">Error: {error}</p>
             <p className="text-sm text-gray-500">Access ID: {id}</p>
           </div>
-          <Button onClick={() => window.location.href = '/'} variant="outline" className="mt-4">
+          <Button onClick={() => window.location.href = '/'} variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go Home
           </Button>

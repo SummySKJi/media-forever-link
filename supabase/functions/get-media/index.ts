@@ -8,14 +8,14 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  console.log('Get media function called with method:', req.method)
+  console.log('Request URL:', req.url)
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('Get media function called with method:', req.method)
-    console.log('Request URL:', req.url)
-    
     let accessLink: string | null = null;
 
     // Handle both GET and POST requests
@@ -47,9 +47,12 @@ serve(async (req) => {
       )
     }
 
-    // Initialize Supabase client with proper error handling
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
+    
+    console.log('Supabase URL check:', !!supabaseUrl)
+    console.log('Supabase Key check:', !!supabaseKey)
     
     if (!supabaseUrl || !supabaseKey) {
       console.error('Missing Supabase environment variables')
@@ -69,14 +72,20 @@ serve(async (req) => {
       .eq('access_link', accessLink)
       .single()
 
+    console.log('Database query result:', { data, error })
+
     if (error) {
       console.error('Database error:', error)
+      
+      // Handle specific error codes
       if (error.code === 'PGRST116') {
+        console.log('File not found in database')
         return new Response(
           JSON.stringify({ error: 'File not found' }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+      
       return new Response(
         JSON.stringify({ error: 'Database error', details: error.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

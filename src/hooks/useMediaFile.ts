@@ -37,8 +37,10 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
       try {
         console.log('Fetching file with access link:', accessLink);
         
-        // Use direct fetch to the Edge Function with proper URL construction
-        const response = await fetch(`https://nwepfribozwhpzwlpiuq.supabase.co/functions/v1/get-media?id=${encodeURIComponent(accessLink)}`, {
+        // Use the correct Supabase Edge Function URL
+        const functionUrl = `https://nwepfribozwhpzwlpiuq.supabase.co/functions/v1/get-media`;
+        
+        const response = await fetch(`${functionUrl}?id=${encodeURIComponent(accessLink)}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -46,11 +48,20 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
         });
 
         console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
         if (!response.ok) {
-          const errorData = await response.text();
-          console.error('Function call failed:', errorData);
-          throw new Error(`Failed to load file: ${response.status}`);
+          const errorText = await response.text();
+          console.error('Function call failed:', errorText);
+          
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText };
+          }
+          
+          throw new Error(errorData.error || `HTTP ${response.status}`);
         }
 
         const data = await response.json();
@@ -58,7 +69,7 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
 
         if (!data || !data.file) {
           console.error('No file data in response:', data);
-          throw new Error('File not found');
+          throw new Error('File not found in response');
         }
 
         console.log('File retrieved successfully:', data.file);
@@ -67,6 +78,7 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
         const errorMessage = err instanceof Error ? err.message : 'Failed to load file';
         console.error('useMediaFile error:', err);
         setError(errorMessage);
+        
         toast({
           title: "File Not Found",
           description: "The requested file could not be found or loaded.",
