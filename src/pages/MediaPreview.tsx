@@ -11,7 +11,7 @@ const MediaPreview = () => {
   const { id } = useParams();
   const { file: fileData, loading, error } = useMediaFile(id || '');
 
-  const formatFileSize = (bytes) => {
+  const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -95,7 +95,7 @@ const MediaPreview = () => {
         <FileText className="w-16 h-16 text-orange-500 mx-auto mb-4" />
         <h4 className="text-lg font-semibold text-gray-700 mb-2">Document File</h4>
         <p className="text-gray-500 mb-4">Preview not available for this file type.</p>
-        <Button onClick={handleDownload} className="flex items-center space-x-2">
+        <Button onClick={handleDownload} className="flex items-center space-x-2 mx-auto">
           <Download className="w-4 h-4" />
           <span>Download File</span>
         </Button>
@@ -117,10 +117,16 @@ const MediaPreview = () => {
   if (error || !fileData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <h1 className="text-2xl font-bold text-gray-800 mb-2">File Not Found</h1>
-          <p className="text-gray-600 mb-4">The requested file could not be found.</p>
-          <Button onClick={() => window.location.href = '/'} variant="outline">
+          <p className="text-gray-600 mb-4">
+            The requested file could not be found. The link may be invalid or the file may have been removed.
+          </p>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-500">Error: {error}</p>
+            <p className="text-sm text-gray-500">Access ID: {id}</p>
+          </div>
+          <Button onClick={() => window.location.href = '/'} variant="outline" className="mt-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Go Home
           </Button>

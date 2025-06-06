@@ -38,7 +38,7 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
         console.log('Fetching file with access link:', accessLink);
         
         // Use direct fetch to the Edge Function with proper URL construction
-        const response = await fetch(`https://nwepfribozwhpzwlpiuq.supabase.co/functions/v1/get-media?id=${accessLink}`, {
+        const response = await fetch(`https://nwepfribozwhpzwlpiuq.supabase.co/functions/v1/get-media?id=${encodeURIComponent(accessLink)}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -50,7 +50,7 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
         if (!response.ok) {
           const errorData = await response.text();
           console.error('Function call failed:', errorData);
-          throw new Error(`HTTP ${response.status}: ${errorData}`);
+          throw new Error(`Failed to load file: ${response.status}`);
         }
 
         const data = await response.json();
@@ -69,7 +69,7 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
         setError(errorMessage);
         toast({
           title: "File Not Found",
-          description: errorMessage,
+          description: "The requested file could not be found or loaded.",
           variant: "destructive"
         });
       } finally {

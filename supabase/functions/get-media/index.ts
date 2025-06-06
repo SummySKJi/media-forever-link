@@ -47,8 +47,17 @@ serve(async (req) => {
       )
     }
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
+    // Initialize Supabase client with proper error handling
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase environment variables')
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
     
     const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -62,9 +71,15 @@ serve(async (req) => {
 
     if (error) {
       console.error('Database error:', error)
+      if (error.code === 'PGRST116') {
+        return new Response(
+          JSON.stringify({ error: 'File not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
       return new Response(
-        JSON.stringify({ error: 'File not found', details: error.message }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Database error', details: error.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
