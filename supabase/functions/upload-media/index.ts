@@ -150,8 +150,8 @@ serve(async (req) => {
 
     console.log('File uploaded successfully:', dbData)
 
-    // Generate the correct frontend URL for sharing
-    const shareUrl = `https://nwepfribozwhpzwlpiuq.lovable.app/media/${accessLink}`
+    // Use direct Cloudinary URL as the shareable link
+    const shareUrl = cloudinaryData.secure_url
 
     console.log('Generated share URL:', shareUrl)
 

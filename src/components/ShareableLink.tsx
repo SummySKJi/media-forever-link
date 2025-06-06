@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Link2, Copy, Check, ExternalLink, Share2 } from 'lucide-react';
+import { Link2, Copy, Check, ExternalLink, Share2, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ShareableLinkProps {
@@ -22,7 +22,7 @@ const ShareableLink = ({ url }: ShareableLinkProps) => {
       
       toast({
         title: "Link Copied!",
-        description: "The shareable link has been copied to your clipboard.",
+        description: "The direct file link has been copied to your clipboard.",
       });
     } catch (err) {
       toast({
@@ -35,6 +35,16 @@ const ShareableLink = ({ url }: ShareableLinkProps) => {
 
   const openInNewTab = () => {
     window.open(url, '_blank');
+  };
+
+  const downloadFile = () => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = url.split('/').pop() || 'file';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const shareViaWebAPI = async () => {
@@ -61,7 +71,7 @@ const ShareableLink = ({ url }: ShareableLinkProps) => {
           <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
             <Link2 className="w-4 h-4 text-green-600" />
           </div>
-          <span>Your Permanent Shareable Link</span>
+          <span>Your Direct File Link</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -100,7 +110,16 @@ const ShareableLink = ({ url }: ShareableLinkProps) => {
             className="flex items-center space-x-2"
           >
             <ExternalLink className="w-4 h-4" />
-            <span>Preview</span>
+            <span>View File</span>
+          </Button>
+
+          <Button 
+            onClick={downloadFile}
+            variant="outline"
+            className="flex items-center space-x-2"
+          >
+            <Download className="w-4 h-4" />
+            <span>Download</span>
           </Button>
 
           <Button 
@@ -113,15 +132,15 @@ const ShareableLink = ({ url }: ShareableLinkProps) => {
           </Button>
         </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
-            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+            <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
               <Check className="w-4 h-4 text-white" />
             </div>
             <div>
-              <h4 className="font-semibold text-green-800">Permanent Link Created</h4>
-              <p className="text-green-700 text-sm mt-1">
-                This link will work forever and can be shared with anyone. No account required to access.
+              <h4 className="font-semibold text-blue-800">Direct Cloud Link</h4>
+              <p className="text-blue-700 text-sm mt-1">
+                This is a direct link to your file hosted on Cloudinary. It works anywhere and doesn't require our platform.
               </p>
             </div>
           </div>
