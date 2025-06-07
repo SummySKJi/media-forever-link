@@ -51,7 +51,7 @@ const Index = () => {
       <header className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            Share4Ever
+            Media2Link
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
             Upload any media file and get a permanent shareable link that works forever
@@ -78,7 +78,7 @@ const Index = () => {
               {/* Features */}
               <section aria-label="Key features" className="mt-16">
                 <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-                  Why Choose Share4Ever?
+                  Why Choose Media2Link?
                 </h2>
                 <div className="grid md:grid-cols-3 gap-6">
                   <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -197,7 +197,7 @@ const Index = () => {
       {/* Footer */}
       <footer className="container mx-auto px-4 py-8 mt-16">
         <div className="text-center text-gray-500">
-          <p>&copy; 2024 Share4Ever. Free permanent file sharing service.</p>
+          <p>&copy; 2024 Media2Link. Free permanent file sharing service.</p>
         </div>
       </footer>
     </div>
