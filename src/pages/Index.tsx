@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Upload, Link2, Eye, Shield, Zap, Globe } from 'lucide-react';
 import FileUploadZone from '@/components/FileUploadZone';
 import FilePreview from '@/components/FilePreview';
 import ShareableLink from '@/components/ShareableLink';
+import DeveloperSection from '@/components/DeveloperSection';
 import { useFileUpload } from '@/hooks/useFileUpload';
 
 const Index = () => {
@@ -171,6 +171,9 @@ const Index = () => {
                   </Card>
                 </div>
               </section>
+
+              {/* Developer Section */}
+              <DeveloperSection />
             </div>
           ) : (
             <div className="space-y-8">
