@@ -6,6 +6,7 @@ import FileUploadZone from '@/components/FileUploadZone';
 import FilePreview from '@/components/FilePreview';
 import ShareableLink from '@/components/ShareableLink';
 import DeveloperSection from '@/components/DeveloperSection';
+import AdSection from '@/components/AdSection';
 import { useFileUpload } from '@/hooks/useFileUpload';
 
 const Index = () => {
@@ -74,6 +75,9 @@ const Index = () => {
                   isUploading={isUploading}
                 />
               </section>
+              
+              {/* Ads Section - After Upload Zone */}
+              <AdSection />
               
               {/* Features */}
               <section aria-label="Key features" className="mt-16">
@@ -174,11 +178,17 @@ const Index = () => {
 
               {/* Developer Section */}
               <DeveloperSection />
+              
+              {/* Ads Section - Before Footer */}
+              <AdSection />
             </div>
           ) : (
             <div className="space-y-8">
               {/* File Preview */}
               <FilePreview file={uploadedFile} />
+              
+              {/* Ads Section - After File Preview */}
+              <AdSection />
               
               {/* Shareable Link */}
               <ShareableLink url={shareableUrl} />
