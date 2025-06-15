@@ -1,7 +1,24 @@
 
 import { Card, CardContent } from '@/components/ui/card';
+import { useEffect } from 'react';
 
 const AdSection = () => {
+  useEffect(() => {
+    // Load AdStera script for mobile banner
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = '//www.highperformanceformat.com/c0eba0d535e19bef8ba22e71cd3eb9e7/invoke.js';
+    script.async = true;
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup script on unmount
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
   return (
     <section aria-label="Advertisements" className="mt-16">
       <div className="text-center mb-8">
@@ -46,13 +63,22 @@ const AdSection = () => {
           </Card>
         </div>
 
-        {/* Mobile optimized ad */}
+        {/* Mobile optimized ad - AdStera */}
         <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg md:hidden">
           <CardContent className="p-6">
-            <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-lg h-20 flex items-center justify-center border-2 border-dashed border-orange-200">
-              <div className="text-center">
-                <p className="text-orange-600 font-medium">320 x 50 Mobile Banner</p>
-                <p className="text-sm text-orange-400">Mobile Ad Space</p>
+            <div className="flex justify-center">
+              <div id="adstera-mobile-banner">
+                <script type="text/javascript">
+                  {`
+                    atOptions = {
+                      'key' : 'c0eba0d535e19bef8ba22e71cd3eb9e7',
+                      'format' : 'iframe',
+                      'height' : 50,
+                      'width' : 320,
+                      'params' : {}
+                    };
+                  `}
+                </script>
               </div>
             </div>
           </CardContent>
