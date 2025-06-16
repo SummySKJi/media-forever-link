@@ -4,17 +4,26 @@ import { useEffect } from 'react';
 
 const AdSection = () => {
   useEffect(() => {
-    // Load AdStera script for mobile banner
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = '//www.highperformanceformat.com/c0eba0d535e19bef8ba22e71cd3eb9e7/invoke.js';
-    script.async = true;
-    document.head.appendChild(script);
+    // Load AdStera scripts for both banner and mobile ads
+    const mobileScript = document.createElement('script');
+    mobileScript.type = 'text/javascript';
+    mobileScript.src = '//www.highperformanceformat.com/c0eba0d535e19bef8ba22e71cd3eb9e7/invoke.js';
+    mobileScript.async = true;
+    document.head.appendChild(mobileScript);
+
+    const bannerScript = document.createElement('script');
+    bannerScript.type = 'text/javascript';
+    bannerScript.src = '//www.highperformanceformat.com/069c7ef05afec20a848f2f5da15c8a92/invoke.js';
+    bannerScript.async = true;
+    document.head.appendChild(bannerScript);
 
     return () => {
-      // Cleanup script on unmount
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
+      // Cleanup scripts on unmount
+      if (document.head.contains(mobileScript)) {
+        document.head.removeChild(mobileScript);
+      }
+      if (document.head.contains(bannerScript)) {
+        document.head.removeChild(bannerScript);
       }
     };
   }, []);
@@ -26,13 +35,22 @@ const AdSection = () => {
       </div>
       
       <div className="grid gap-6">
-        {/* Banner Ad */}
+        {/* Banner Ad - AdStera 728x90 */}
         <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
           <CardContent className="p-6">
-            <div className="bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg h-24 flex items-center justify-center border-2 border-dashed border-gray-300">
-              <div className="text-center">
-                <p className="text-gray-500 font-medium">728 x 90 Banner Ad</p>
-                <p className="text-sm text-gray-400">Your ad could be here</p>
+            <div className="flex justify-center">
+              <div id="adstera-banner-728x90">
+                <script type="text/javascript">
+                  {`
+                    atOptions = {
+                      'key' : '069c7ef05afec20a848f2f5da15c8a92',
+                      'format' : 'iframe',
+                      'height' : 90,
+                      'width' : 728,
+                      'params' : {}
+                    };
+                  `}
+                </script>
               </div>
             </div>
           </CardContent>
