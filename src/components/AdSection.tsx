@@ -4,35 +4,17 @@ import { useEffect } from 'react';
 
 const AdSection = () => {
   useEffect(() => {
-    // Load AdStera scripts for banner, mobile, and rectangle ads
-    const mobileScript = document.createElement('script');
-    mobileScript.type = 'text/javascript';
-    mobileScript.src = '//www.highperformanceformat.com/c0eba0d535e19bef8ba22e71cd3eb9e7/invoke.js';
-    mobileScript.async = true;
-    document.head.appendChild(mobileScript);
-
-    const bannerScript = document.createElement('script');
-    bannerScript.type = 'text/javascript';
-    bannerScript.src = '//www.highperformanceformat.com/069c7ef05afec20a848f2f5da15c8a92/invoke.js';
-    bannerScript.async = true;
-    document.head.appendChild(bannerScript);
-
-    const rectangleScript = document.createElement('script');
-    rectangleScript.type = 'text/javascript';
-    rectangleScript.src = '//www.highperformanceformat.com/5872b691c5dd6ec53ad81fad19436cf6/invoke.js';
-    rectangleScript.async = true;
-    document.head.appendChild(rectangleScript);
+    // Load AdStera script for all ads
+    const adScript = document.createElement('script');
+    adScript.type = 'text/javascript';
+    adScript.src = '//www.highperformanceformat.com/5872b691c5dd6ec53ad81fad19436cf6/invoke.js';
+    adScript.async = true;
+    document.head.appendChild(adScript);
 
     return () => {
-      // Cleanup scripts on unmount
-      if (document.head.contains(mobileScript)) {
-        document.head.removeChild(mobileScript);
-      }
-      if (document.head.contains(bannerScript)) {
-        document.head.removeChild(bannerScript);
-      }
-      if (document.head.contains(rectangleScript)) {
-        document.head.removeChild(rectangleScript);
+      // Cleanup script on unmount
+      if (document.head.contains(adScript)) {
+        document.head.removeChild(adScript);
       }
     };
   }, []);
@@ -44,18 +26,18 @@ const AdSection = () => {
       </div>
       
       <div className="grid gap-6">
-        {/* Banner Ad - AdStera 728x90 */}
+        {/* Banner Ad - Now using 300x250 format */}
         <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
           <CardContent className="p-6">
             <div className="flex justify-center">
-              <div id="adstera-banner-728x90">
+              <div id="adstera-banner-300x250">
                 <script type="text/javascript">
                   {`
                     atOptions = {
-                      'key' : '069c7ef05afec20a848f2f5da15c8a92',
+                      'key' : '5872b691c5dd6ec53ad81fad19436cf6',
                       'format' : 'iframe',
-                      'height' : 90,
-                      'width' : 728,
+                      'height' : 250,
+                      'width' : 300,
                       'params' : {}
                     };
                   `}
@@ -108,18 +90,18 @@ const AdSection = () => {
           </Card>
         </div>
 
-        {/* Mobile optimized ad - AdStera */}
+        {/* Mobile optimized ad - Now using 300x250 format */}
         <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg md:hidden">
           <CardContent className="p-6">
             <div className="flex justify-center">
-              <div id="adstera-mobile-banner">
+              <div id="adstera-mobile-300x250">
                 <script type="text/javascript">
                   {`
                     atOptions = {
-                      'key' : 'c0eba0d535e19bef8ba22e71cd3eb9e7',
+                      'key' : '5872b691c5dd6ec53ad81fad19436cf6',
                       'format' : 'iframe',
-                      'height' : 50,
-                      'width' : 320,
+                      'height' : 250,
+                      'width' : 300,
                       'params' : {}
                     };
                   `}
