@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 
 const AdSection = () => {
   useEffect(() => {
-    // Load AdStera scripts for both banner and mobile ads
+    // Load AdStera scripts for banner, mobile, and rectangle ads
     const mobileScript = document.createElement('script');
     mobileScript.type = 'text/javascript';
     mobileScript.src = '//www.highperformanceformat.com/c0eba0d535e19bef8ba22e71cd3eb9e7/invoke.js';
@@ -17,6 +17,12 @@ const AdSection = () => {
     bannerScript.async = true;
     document.head.appendChild(bannerScript);
 
+    const rectangleScript = document.createElement('script');
+    rectangleScript.type = 'text/javascript';
+    rectangleScript.src = '//www.highperformanceformat.com/5872b691c5dd6ec53ad81fad19436cf6/invoke.js';
+    rectangleScript.async = true;
+    document.head.appendChild(rectangleScript);
+
     return () => {
       // Cleanup scripts on unmount
       if (document.head.contains(mobileScript)) {
@@ -24,6 +30,9 @@ const AdSection = () => {
       }
       if (document.head.contains(bannerScript)) {
         document.head.removeChild(bannerScript);
+      }
+      if (document.head.contains(rectangleScript)) {
+        document.head.removeChild(rectangleScript);
       }
     };
   }, []);
@@ -56,14 +65,23 @@ const AdSection = () => {
           </CardContent>
         </Card>
 
-        {/* Side by side ads for larger screens */}
+        {/* Side by side ads for larger screens - AdStera 300x250 */}
         <div className="grid md:grid-cols-2 gap-6">
           <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
             <CardContent className="p-6">
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg h-32 flex items-center justify-center border-2 border-dashed border-blue-200">
-                <div className="text-center">
-                  <p className="text-blue-600 font-medium">300 x 250 Medium Rectangle</p>
-                  <p className="text-sm text-blue-400">Advertisement Space</p>
+              <div className="flex justify-center">
+                <div id="adstera-rectangle-300x250-1">
+                  <script type="text/javascript">
+                    {`
+                      atOptions = {
+                        'key' : '5872b691c5dd6ec53ad81fad19436cf6',
+                        'format' : 'iframe',
+                        'height' : 250,
+                        'width' : 300,
+                        'params' : {}
+                      };
+                    `}
+                  </script>
                 </div>
               </div>
             </CardContent>
@@ -71,10 +89,19 @@ const AdSection = () => {
 
           <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
             <CardContent className="p-6">
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg h-32 flex items-center justify-center border-2 border-dashed border-green-200">
-                <div className="text-center">
-                  <p className="text-green-600 font-medium">300 x 250 Medium Rectangle</p>
-                  <p className="text-sm text-green-400">Advertisement Space</p>
+              <div className="flex justify-center">
+                <div id="adstera-rectangle-300x250-2">
+                  <script type="text/javascript">
+                    {`
+                      atOptions = {
+                        'key' : '5872b691c5dd6ec53ad81fad19436cf6',
+                        'format' : 'iframe',
+                        'height' : 250,
+                        'width' : 300,
+                        'params' : {}
+                      };
+                    `}
+                  </script>
                 </div>
               </div>
             </CardContent>
