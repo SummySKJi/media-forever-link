@@ -1,6 +1,8 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -47,49 +49,85 @@ serve(async (req) => {
       )
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
-    
-    console.log('Supabase URL check:', !!supabaseUrl)
-    console.log('Supabase Key check:', !!supabaseKey)
-    
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase environment variables')
-      return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    // Try Firebase first if configured
+    let firebaseData = null
+    try {
+      const firebaseConfig = {
+        apiKey: Deno.env.get('FIREBASE_API_KEY'),
+        authDomain: Deno.env.get('FIREBASE_AUTH_DOMAIN'),
+        projectId: Deno.env.get('FIREBASE_PROJECT_ID'),
+        storageBucket: Deno.env.get('FIREBASE_STORAGE_BUCKET'),
+        messagingSenderId: Deno.env.get('FIREBASE_MESSAGING_SENDER_ID'),
+        appId: Deno.env.get('FIREBASE_APP_ID')
+      }
+
+      if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+        console.log('Checking Firebase for file...')
+        const app = initializeApp(firebaseConfig)
+        const db = getFirestore(app)
+        
+        const q = query(collection(db, 'media_files'), where('access_link', '==', accessLink))
+        const querySnapshot = await getDocs(q)
+        
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0]
+          firebaseData = { id: doc.id, ...doc.data() }
+          console.log('File found in Firebase:', firebaseData)
+        }
+      }
+    } catch (firebaseError) {
+      console.warn('Firebase query failed, falling back to Supabase:', firebaseError)
     }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey)
 
-    console.log('Querying database for access link:', accessLink)
-
-    const { data, error } = await supabase
-      .from('media_files')
-      .select('*')
-      .eq('access_link', accessLink)
-      .single()
-
-    console.log('Database query result:', { data, error })
-
-    if (error) {
-      console.error('Database error:', error)
+    // If not found in Firebase, try Supabase
+    let data = firebaseData
+    if (!data) {
+      // Initialize Supabase client
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
       
-      // Handle specific error codes
-      if (error.code === 'PGRST116') {
-        console.log('File not found in database')
+      console.log('Supabase URL check:', !!supabaseUrl)
+      console.log('Supabase Key check:', !!supabaseKey)
+      
+      if (!supabaseUrl || !supabaseKey) {
+        console.error('Missing Supabase environment variables')
         return new Response(
-          JSON.stringify({ error: 'File not found' }),
-          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Server configuration error' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
       
-      return new Response(
-        JSON.stringify({ error: 'Database error', details: error.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      const supabase = createClient(supabaseUrl, supabaseKey)
+
+      console.log('Querying Supabase database for access link:', accessLink)
+
+      const { data: supabaseData, error } = await supabase
+        .from('media_files')
+        .select('*')
+        .eq('access_link', accessLink)
+        .single()
+
+      console.log('Supabase query result:', { data: supabaseData, error })
+
+      if (error) {
+        console.error('Database error:', error)
+        
+        // Handle specific error codes
+        if (error.code === 'PGRST116') {
+          console.log('File not found in database')
+          return new Response(
+            JSON.stringify({ error: 'File not found' }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        
+        return new Response(
+          JSON.stringify({ error: 'Database error', details: error.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      data = supabaseData
     }
 
     if (!data) {

@@ -1,6 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
+import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,6 +40,37 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: Deno.env.get('FIREBASE_API_KEY'),
+      authDomain: Deno.env.get('FIREBASE_AUTH_DOMAIN'),
+      projectId: Deno.env.get('FIREBASE_PROJECT_ID'),
+      storageBucket: Deno.env.get('FIREBASE_STORAGE_BUCKET'),
+      messagingSenderId: Deno.env.get('FIREBASE_MESSAGING_SENDER_ID'),
+      appId: Deno.env.get('FIREBASE_APP_ID')
+    }
+
+    console.log('Firebase config check:', {
+      apiKey: !!firebaseConfig.apiKey,
+      authDomain: !!firebaseConfig.authDomain,
+      projectId: !!firebaseConfig.projectId,
+      storageBucket: !!firebaseConfig.storageBucket,
+      messagingSenderId: !!firebaseConfig.messagingSenderId,
+      appId: !!firebaseConfig.appId
+    })
+
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+      console.error('Missing Firebase configuration')
+      return new Response(
+        JSON.stringify({ error: 'Firebase not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const app = initializeApp(firebaseConfig)
+    const storage = getStorage(app)
+    const db = getFirestore(app)
 
     // Get Cloudinary credentials from secrets
     const cloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')
@@ -119,13 +153,30 @@ serve(async (req) => {
 
     console.log('Generated access link:', accessLink)
 
-    // Save metadata to Supabase
+    // Store file metadata in Firebase Firestore
+    try {
+      console.log('Saving to Firebase Firestore...')
+      const docRef = await addDoc(collection(db, 'media_files'), {
+        file_name: file.name,
+        file_type: file.type,
+        file_size: file.size,
+        cloudinary_public_id: cloudinaryData.public_id,
+        cloudinary_url: cloudinaryData.secure_url,
+        access_link: accessLink,
+        uploaded_at: new Date()
+      })
+      console.log('Firebase document created with ID:', docRef.id)
+    } catch (firebaseError) {
+      console.warn('Firebase storage failed, falling back to Supabase:', firebaseError)
+    }
+
+    // Save metadata to Supabase (as backup/primary)
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!
     
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    console.log('Saving to database...')
+    console.log('Saving to Supabase database...')
 
     const { data: dbData, error } = await supabase
       .from('media_files')
