@@ -1,8 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
-import { getFirestore, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -63,16 +61,45 @@ serve(async (req) => {
 
       if (firebaseConfig.apiKey && firebaseConfig.projectId) {
         console.log('Checking Firebase for file...')
-        const app = initializeApp(firebaseConfig)
-        const db = getFirestore(app)
         
-        const q = query(collection(db, 'media_files'), where('access_link', '==', accessLink))
-        const querySnapshot = await getDocs(q)
+        const firebaseApiKey = firebaseConfig.apiKey
+        const projectId = firebaseConfig.projectId
         
-        if (!querySnapshot.empty) {
-          const doc = querySnapshot.docs[0]
-          firebaseData = { id: doc.id, ...doc.data() }
-          console.log('File found in Firebase:', firebaseData)
+        // Query Firebase using REST API
+        const queryResponse = await fetch(
+          `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/media_files?key=${firebaseApiKey}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          }
+        )
+        
+        if (queryResponse.ok) {
+          const queryData = await queryResponse.json()
+          console.log('Firebase query response:', queryData)
+          
+          if (queryData.documents) {
+            for (const doc of queryData.documents) {
+              if (doc.fields.access_link?.stringValue === accessLink) {
+                firebaseData = {
+                  id: doc.name.split('/').pop(),
+                  file_name: doc.fields.file_name?.stringValue,
+                  file_type: doc.fields.file_type?.stringValue,
+                  file_size: parseInt(doc.fields.file_size?.integerValue || '0'),
+                  cloudinary_url: doc.fields.cloudinary_url?.stringValue,
+                  cloudinary_public_id: doc.fields.cloudinary_public_id?.stringValue,
+                  access_link: doc.fields.access_link?.stringValue,
+                  uploaded_at: doc.fields.uploaded_at?.timestampValue
+                }
+                console.log('File found in Firebase:', firebaseData)
+                break
+              }
+            }
+          }
+        } else {
+          console.warn('Firebase query failed with status:', queryResponse.status)
         }
       }
     } catch (firebaseError) {
@@ -141,7 +168,10 @@ serve(async (req) => {
     console.log('File found successfully:', data)
 
     return new Response(
-      JSON.stringify({ file: data }),
+      JSON.stringify({ 
+        file: data,
+        source: firebaseData ? 'firebase' : 'supabase'
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 

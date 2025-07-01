@@ -1,9 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js'
-import { getFirestore, collection, addDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -40,37 +37,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    // Initialize Firebase
-    const firebaseConfig = {
-      apiKey: Deno.env.get('FIREBASE_API_KEY'),
-      authDomain: Deno.env.get('FIREBASE_AUTH_DOMAIN'),
-      projectId: Deno.env.get('FIREBASE_PROJECT_ID'),
-      storageBucket: Deno.env.get('FIREBASE_STORAGE_BUCKET'),
-      messagingSenderId: Deno.env.get('FIREBASE_MESSAGING_SENDER_ID'),
-      appId: Deno.env.get('FIREBASE_APP_ID')
-    }
-
-    console.log('Firebase config check:', {
-      apiKey: !!firebaseConfig.apiKey,
-      authDomain: !!firebaseConfig.authDomain,
-      projectId: !!firebaseConfig.projectId,
-      storageBucket: !!firebaseConfig.storageBucket,
-      messagingSenderId: !!firebaseConfig.messagingSenderId,
-      appId: !!firebaseConfig.appId
-    })
-
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-      console.error('Missing Firebase configuration')
-      return new Response(
-        JSON.stringify({ error: 'Firebase not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const app = initializeApp(firebaseConfig)
-    const storage = getStorage(app)
-    const db = getFirestore(app)
 
     // Get Cloudinary credentials from secrets
     const cloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')
@@ -153,21 +119,58 @@ serve(async (req) => {
 
     console.log('Generated access link:', accessLink)
 
-    // Store file metadata in Firebase Firestore
+    // Try Firebase storage first
+    let firebaseSaved = false
     try {
-      console.log('Saving to Firebase Firestore...')
-      const docRef = await addDoc(collection(db, 'media_files'), {
-        file_name: file.name,
-        file_type: file.type,
-        file_size: file.size,
-        cloudinary_public_id: cloudinaryData.public_id,
-        cloudinary_url: cloudinaryData.secure_url,
-        access_link: accessLink,
-        uploaded_at: new Date()
-      })
-      console.log('Firebase document created with ID:', docRef.id)
+      const firebaseConfig = {
+        apiKey: Deno.env.get('FIREBASE_API_KEY'),
+        authDomain: Deno.env.get('FIREBASE_AUTH_DOMAIN'),
+        projectId: Deno.env.get('FIREBASE_PROJECT_ID'),
+        storageBucket: Deno.env.get('FIREBASE_STORAGE_BUCKET'),
+        messagingSenderId: Deno.env.get('FIREBASE_MESSAGING_SENDER_ID'),
+        appId: Deno.env.get('FIREBASE_APP_ID')
+      }
+
+      if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+        console.log('Attempting to save to Firebase Firestore...')
+        
+        // Use Firebase REST API instead of client SDK
+        const firebaseApiKey = firebaseConfig.apiKey
+        const projectId = firebaseConfig.projectId
+        
+        const firestoreDoc = {
+          fields: {
+            file_name: { stringValue: file.name },
+            file_type: { stringValue: file.type },
+            file_size: { integerValue: file.size.toString() },
+            cloudinary_public_id: { stringValue: cloudinaryData.public_id },
+            cloudinary_url: { stringValue: cloudinaryData.secure_url },
+            access_link: { stringValue: accessLink },
+            uploaded_at: { timestampValue: new Date().toISOString() }
+          }
+        }
+
+        const firebaseResponse = await fetch(
+          `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/media_files?key=${firebaseApiKey}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(firestoreDoc)
+          }
+        )
+
+        if (firebaseResponse.ok) {
+          console.log('Successfully saved to Firebase Firestore')
+          firebaseSaved = true
+        } else {
+          const errorText = await firebaseResponse.text()
+          console.warn('Firebase save failed:', errorText)
+        }
+      }
     } catch (firebaseError) {
-      console.warn('Firebase storage failed, falling back to Supabase:', firebaseError)
+      console.warn('Firebase operation failed:', firebaseError)
     }
 
     // Save metadata to Supabase (as backup/primary)
@@ -200,6 +203,7 @@ serve(async (req) => {
     }
 
     console.log('File uploaded successfully:', dbData)
+    console.log('Firebase saved:', firebaseSaved)
 
     // Use direct Cloudinary URL as the shareable link
     const shareUrl = cloudinaryData.secure_url
@@ -210,7 +214,8 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         file: dbData,
-        shareUrl: shareUrl
+        shareUrl: shareUrl,
+        firebaseSaved: firebaseSaved
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
