@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,6 @@ import FileUploadZone from '@/components/FileUploadZone';
 import FilePreview from '@/components/FilePreview';
 import ShareableLink from '@/components/ShareableLink';
 import DeveloperSection from '@/components/DeveloperSection';
-import AdSection from '@/components/AdSection';
 import { useFileUpload } from '@/hooks/useFileUpload';
 
 const Index = () => {
@@ -47,82 +47,86 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Header */}
-      <header className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
+      <header className="container mx-auto px-4 py-12">
+        <div className="text-center mb-16">
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-900 bg-clip-text text-transparent mb-6">
             Media2Link
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-6">
-            Upload any media file and get a permanent shareable link that works forever
+          <p className="text-2xl text-slate-700 max-w-3xl mx-auto mb-8 font-medium">
+            Professional file sharing with permanent cloud hosting
           </p>
-          <p className="text-lg text-gray-500 max-w-3xl mx-auto">
-            Free file sharing service with direct cloud hosting. No registration required, no expiration dates, unlimited sharing.
+          <p className="text-lg text-slate-600 max-w-4xl mx-auto leading-relaxed">
+            Upload any media file and receive a secure, permanent link that works everywhere. 
+            No registration required, enterprise-grade reliability.
           </p>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {!uploadedFile ? (
-            <div className="space-y-8">
+            <div className="space-y-20">
               {/* Upload Zone */}
-              <section aria-label="File upload area">
+              <section aria-label="File upload area" className="mb-12">
                 <FileUploadZone 
                   onFileSelect={handleFileUpload} 
                   isUploading={isUploading}
                 />
               </section>
               
-              {/* Ads Section - After Upload Zone */}
-              <AdSection />
-              
-              {/* Features */}
-              <section aria-label="Key features" className="mt-16">
-                <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">
-                  Why Choose Media2Link?
-                </h2>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CardHeader className="text-center">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Upload className="w-6 h-6 text-blue-600" />
+              {/* Features Grid */}
+              <section aria-label="Key features" className="mt-20">
+                <div className="text-center mb-16">
+                  <h2 className="text-4xl font-bold text-slate-900 mb-4">
+                    Enterprise-Grade File Sharing
+                  </h2>
+                  <p className="text-xl text-slate-600 max-w-3xl mx-auto">
+                    Built for professionals who need reliable, permanent file hosting
+                  </p>
+                </div>
+                
+                <div className="grid md:grid-cols-3 gap-8">
+                  <Card className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+                    <CardHeader className="text-center pb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <Upload className="w-8 h-8 text-white" />
                       </div>
-                      <CardTitle className="text-lg">Easy Upload</CardTitle>
+                      <CardTitle className="text-xl text-slate-900">Instant Upload</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-center">
-                        Drag & drop or click to upload images, videos, audio, and documents up to 500MB. No registration required.
+                    <CardContent className="pt-0">
+                      <p className="text-slate-600 text-center leading-relaxed">
+                        Drag & drop files up to 500MB. Support for all media formats including images, videos, audio, and documents.
                       </p>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CardHeader className="text-center">
-                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Link2 className="w-6 h-6 text-purple-600" />
+                  <Card className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+                    <CardHeader className="text-center pb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <Link2 className="w-8 h-8 text-white" />
                       </div>
-                      <CardTitle className="text-lg">Permanent Links</CardTitle>
+                      <CardTitle className="text-xl text-slate-900">Permanent Links</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-center">
-                        Get instant direct cloud links that work forever. No expiration dates, no broken links, guaranteed availability.
+                    <CardContent className="pt-0">
+                      <p className="text-slate-600 text-center leading-relaxed">
+                        Direct cloud URLs that never expire. Professional-grade hosting with 99.9% uptime guarantee.
                       </p>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CardHeader className="text-center">
-                      <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Eye className="w-6 h-6 text-indigo-600" />
+                  <Card className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-300 group">
+                    <CardHeader className="text-center pb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <Eye className="w-8 h-8 text-white" />
                       </div>
-                      <CardTitle className="text-lg">Preview & Download</CardTitle>
+                      <CardTitle className="text-xl text-slate-900">Universal Access</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-center">
-                        Recipients can preview media files directly in browser or download them instantly. Works on all devices.
+                    <CardContent className="pt-0">
+                      <p className="text-slate-600 text-center leading-relaxed">
+                        Preview files in any browser or download instantly. Compatible with all platforms and devices.
                       </p>
                     </CardContent>
                   </Card>
@@ -130,46 +134,46 @@ const Index = () => {
               </section>
 
               {/* Additional Benefits */}
-              <section aria-label="Additional benefits" className="mt-16">
-                <div className="grid md:grid-cols-3 gap-6">
-                  <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
-                    <CardHeader className="text-center">
-                      <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Shield className="w-6 h-6 text-green-600" />
+              <section aria-label="Additional benefits" className="mt-20">
+                <div className="grid md:grid-cols-3 gap-8">
+                  <Card className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <CardHeader className="text-center pb-4">
+                      <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <Shield className="w-7 h-7 text-white" />
                       </div>
-                      <CardTitle className="text-lg">Secure & Reliable</CardTitle>
+                      <CardTitle className="text-lg text-slate-900">Enterprise Security</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-center">
-                        Your files are hosted on secure cloud infrastructure with 99.9% uptime guarantee and enterprise-grade security.
+                    <CardContent className="pt-0">
+                      <p className="text-slate-600 text-center leading-relaxed">
+                        Bank-level encryption and secure cloud infrastructure. Your files are protected with industry-standard security.
                       </p>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
-                    <CardHeader className="text-center">
-                      <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Zap className="w-6 h-6 text-yellow-600" />
+                  <Card className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <CardHeader className="text-center pb-4">
+                      <div className="w-14 h-14 bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <Zap className="w-7 h-7 text-white" />
                       </div>
-                      <CardTitle className="text-lg">Lightning Fast</CardTitle>
+                      <CardTitle className="text-lg text-slate-900">Lightning Fast</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-center">
-                        Powered by global CDN for instant uploads and downloads. Optimized delivery worldwide with minimal latency.
+                    <CardContent className="pt-0">
+                      <p className="text-slate-600 text-center leading-relaxed">
+                        Global CDN ensures instant uploads and downloads worldwide. Optimized for speed and reliability.
                       </p>
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-white/70 backdrop-blur-sm border-0 shadow-lg">
-                    <CardHeader className="text-center">
-                      <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Globe className="w-6 h-6 text-red-600" />
+                  <Card className="bg-white/80 backdrop-blur-sm border border-slate-200 shadow-lg hover:shadow-xl transition-all duration-300">
+                    <CardHeader className="text-center pb-4">
+                      <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <Globe className="w-7 h-7 text-white" />
                       </div>
-                      <CardTitle className="text-lg">Universal Access</CardTitle>
+                      <CardTitle className="text-lg text-slate-900">Global Reach</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-600 text-center">
-                        Direct links work everywhere - social media, email, websites, apps. No special viewers or accounts needed.
+                    <CardContent className="pt-0">
+                      <p className="text-slate-600 text-center leading-relaxed">
+                        Links work everywhere - social media, email, websites, and applications. No special software required.
                       </p>
                     </CardContent>
                   </Card>
@@ -178,24 +182,23 @@ const Index = () => {
 
               {/* Developer Section */}
               <DeveloperSection />
-              
-              {/* Ads Section - Before Footer */}
-              <AdSection />
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-12">
               {/* File Preview */}
               <FilePreview file={uploadedFile} />
-              
-              {/* Ads Section - After File Preview */}
-              <AdSection />
               
               {/* Shareable Link */}
               <ShareableLink url={shareableUrl} />
               
               {/* Actions */}
               <div className="flex justify-center gap-4">
-                <Button onClick={resetUpload} variant="outline" size="lg">
+                <Button 
+                  onClick={resetUpload} 
+                  variant="outline" 
+                  size="lg"
+                  className="bg-white/80 backdrop-blur-sm border-slate-300 hover:bg-slate-50 text-slate-900"
+                >
                   Upload Another File
                 </Button>
               </div>
@@ -205,9 +208,12 @@ const Index = () => {
       </main>
 
       {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 mt-16">
-        <div className="text-center text-gray-500">
-          <p>&copy; 2024 Media2Link. Free permanent file sharing service.</p>
+      <footer className="container mx-auto px-4 py-12 mt-24">
+        <div className="text-center">
+          <div className="h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent mb-8"></div>
+          <p className="text-slate-500 text-sm">
+            &copy; 2024 Media2Link. Professional file sharing service.
+          </p>
         </div>
       </footer>
     </div>
