@@ -29,7 +29,7 @@ serve(async (req) => {
     console.log('File received:', file.name, file.size, file.type)
 
     // Validate file size (max 500MB)
-    const maxSize = 500 * 1024 * 1024 // 500MB
+    const maxSize = 500 * 1024 * 1024
     if (file.size > maxSize) {
       console.error('File too large:', file.size)
       return new Response(
@@ -41,13 +41,15 @@ serve(async (req) => {
     // Get Firebase credentials
     const firebaseApiKey = Deno.env.get('FIREBASE_API_KEY')
     const firebaseStorageBucket = Deno.env.get('FIREBASE_STORAGE_BUCKET')
+    const firebaseProjectId = Deno.env.get('FIREBASE_PROJECT_ID')
 
     console.log('Firebase credentials check:', { 
       apiKey: !!firebaseApiKey, 
-      bucket: !!firebaseStorageBucket 
+      bucket: !!firebaseStorageBucket,
+      projectId: !!firebaseProjectId
     })
 
-    if (!firebaseApiKey || !firebaseStorageBucket) {
+    if (!firebaseApiKey || !firebaseStorageBucket || !firebaseProjectId) {
       console.error('Missing Firebase credentials')
       return new Response(
         JSON.stringify({ error: 'Firebase credentials not configured' }),
@@ -55,18 +57,41 @@ serve(async (req) => {
       )
     }
 
-    // Convert file to base64 for Firebase upload
+    // Convert file to array buffer
     const fileBuffer = await file.arrayBuffer()
     const fileBytes = new Uint8Array(fileBuffer)
-    const base64File = btoa(String.fromCharCode(...fileBytes))
     
     // Generate unique filename
     const timestamp = Date.now()
     const randomId = crypto.randomUUID().split('-')[0]
-    const fileName = `media2link_${timestamp}_${randomId}_${file.name}`
+    const fileName = `media2link_${timestamp}_${randomId}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
     
-    console.log('Uploading to Firebase Storage...')
+    console.log('Uploading to Firebase Storage:', fileName)
     
+    // First, get an auth token for Firebase
+    const authResponse = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInAnonymously?key=${firebaseApiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        returnSecureToken: true
+      })
+    })
+
+    if (!authResponse.ok) {
+      console.error('Firebase auth failed:', authResponse.status)
+      const authError = await authResponse.text()
+      console.error('Auth error details:', authError)
+      return new Response(
+        JSON.stringify({ error: 'Firebase authentication failed', details: authError }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const authData = await authResponse.json()
+    const idToken = authData.idToken
+
     // Upload to Firebase Storage using REST API
     const firebaseUploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o?uploadType=media&name=${encodeURIComponent(fileName)}`
     
@@ -74,7 +99,7 @@ serve(async (req) => {
       method: 'POST',
       headers: {
         'Content-Type': file.type,
-        'Authorization': `Bearer ${firebaseApiKey}`,
+        'Authorization': `Bearer ${idToken}`,
       },
       body: fileBytes,
     })
@@ -93,12 +118,8 @@ serve(async (req) => {
     const firebaseData = await firebaseResponse.json()
     console.log('Firebase upload successful:', firebaseData.name)
 
-    // Get download URL from Firebase
-    const downloadUrlResponse = await fetch(
-      `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(fileName)}?alt=media&token=${firebaseApiKey}`
-    )
-
-    const firebaseDownloadUrl = downloadUrlResponse.url
+    // Generate download URL
+    const firebaseDownloadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(fileName)}?alt=media`
 
     // Generate unique access link
     const accessId = crypto.randomUUID().split('-')[0]
@@ -108,7 +129,7 @@ serve(async (req) => {
 
     // Save to Supabase database
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
     if (!supabaseUrl || !supabaseKey) {
       console.error('Missing Supabase credentials')

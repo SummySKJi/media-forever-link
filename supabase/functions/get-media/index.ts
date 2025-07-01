@@ -46,7 +46,7 @@ serve(async (req) => {
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
     if (!supabaseUrl || !supabaseKey) {
       console.error('Missing Supabase environment variables')
@@ -71,7 +71,6 @@ serve(async (req) => {
     if (error) {
       console.error('Database error:', error)
       
-      // Handle specific error codes
       if (error.code === 'PGRST116') {
         console.log('File not found in database')
         return new Response(
@@ -94,12 +93,10 @@ serve(async (req) => {
       )
     }
 
-    // Get Firebase credentials for enhanced verification
+    // Verify Firebase file still exists
     const firebaseStorageBucket = Deno.env.get('FIREBASE_STORAGE_BUCKET')
-    const firebaseApiKey = Deno.env.get('FIREBASE_API_KEY')
-
-    // If Firebase is configured, verify file exists in Firebase
-    if (firebaseStorageBucket && firebaseApiKey && data.cloudinary_public_id) {
+    
+    if (firebaseStorageBucket && data.cloudinary_public_id) {
       try {
         console.log('Verifying file exists in Firebase:', data.cloudinary_public_id)
         
@@ -108,7 +105,7 @@ serve(async (req) => {
         
         if (firebaseCheckResponse.ok) {
           console.log('File verified in Firebase')
-          const firebaseDownloadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(data.cloudinary_public_id)}?alt=media&token=${firebaseApiKey}`
+          const firebaseDownloadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(data.cloudinary_public_id)}?alt=media`
           
           // Update the URL to Firebase download URL
           data.cloudinary_url = firebaseDownloadUrl
