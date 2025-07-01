@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MediaFile {
   id: string;
@@ -37,39 +38,18 @@ export const useMediaFile = (accessLink: string): UseMediaFileReturn => {
       try {
         console.log('Fetching file with access link:', accessLink);
         
-        // Use the correct Supabase Edge Function URL
-        const functionUrl = `https://nwepfribozwhpzwlpiuq.supabase.co/functions/v1/get-media`;
-        
-        const response = await fetch(`${functionUrl}?id=${encodeURIComponent(accessLink)}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          }
+        const { data, error: functionError } = await supabase.functions.invoke('get-media', {
+          body: { id: accessLink }
         });
 
-        console.log('Response status:', response.status);
-        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('Get media response:', { data, error: functionError });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Function call failed:', errorText);
-          
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { error: errorText };
-          }
-          
-          throw new Error(errorData.error || `HTTP ${response.status}`);
+        if (functionError) {
+          throw new Error(functionError.message || 'Failed to fetch file');
         }
 
-        const data = await response.json();
-        console.log('Get media response:', data);
-
         if (!data || !data.file) {
-          console.error('No file data in response:', data);
-          throw new Error('File not found in response');
+          throw new Error('File not found');
         }
 
         console.log('File retrieved successfully:', data.file);

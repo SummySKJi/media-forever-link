@@ -37,9 +37,8 @@ export const useFileUpload = (): UseFileUploadReturn => {
       const formData = new FormData();
       formData.append('file', file);
 
-      console.log('Calling Supabase edge function...');
+      console.log('Calling upload-media function...');
       
-      // Use Supabase function invocation instead of direct fetch
       const { data, error } = await supabase.functions.invoke('upload-media', {
         body: formData,
       });
@@ -52,6 +51,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
       }
 
       if (!data || !data.success || !data.file) {
+        console.error('Invalid response from server:', data);
         throw new Error('Invalid response from server');
       }
 
