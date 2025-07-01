@@ -94,12 +94,39 @@ serve(async (req) => {
       )
     }
 
+    // Get Firebase credentials for enhanced verification
+    const firebaseStorageBucket = Deno.env.get('FIREBASE_STORAGE_BUCKET')
+    const firebaseApiKey = Deno.env.get('FIREBASE_API_KEY')
+
+    // If Firebase is configured, verify file exists in Firebase
+    if (firebaseStorageBucket && firebaseApiKey && data.cloudinary_public_id) {
+      try {
+        console.log('Verifying file exists in Firebase:', data.cloudinary_public_id)
+        
+        const firebaseCheckUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(data.cloudinary_public_id)}`
+        const firebaseCheckResponse = await fetch(firebaseCheckUrl)
+        
+        if (firebaseCheckResponse.ok) {
+          console.log('File verified in Firebase')
+          const firebaseDownloadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(data.cloudinary_public_id)}?alt=media&token=${firebaseApiKey}`
+          
+          // Update the URL to Firebase download URL
+          data.cloudinary_url = firebaseDownloadUrl
+        } else {
+          console.log('File not found in Firebase, using stored URL')
+        }
+      } catch (firebaseError) {
+        console.error('Firebase verification error:', firebaseError)
+        // Continue with stored URL if Firebase check fails
+      }
+    }
+
     console.log('File found successfully:', data.id)
 
     return new Response(
       JSON.stringify({ 
         file: data,
-        source: 'supabase'
+        source: 'firebase'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

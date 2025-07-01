@@ -38,80 +38,67 @@ serve(async (req) => {
       )
     }
 
-    // Get Cloudinary credentials
-    const cloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')
-    const apiKey = Deno.env.get('CLOUDINARY_API_KEY')
-    const apiSecret = Deno.env.get('CLOUDINARY_API_SECRET')
+    // Get Firebase credentials
+    const firebaseApiKey = Deno.env.get('FIREBASE_API_KEY')
+    const firebaseStorageBucket = Deno.env.get('FIREBASE_STORAGE_BUCKET')
 
-    console.log('Cloudinary credentials check:', { 
-      cloudName: !!cloudName, 
-      apiKey: !!apiKey, 
-      apiSecret: !!apiSecret 
+    console.log('Firebase credentials check:', { 
+      apiKey: !!firebaseApiKey, 
+      bucket: !!firebaseStorageBucket 
     })
 
-    if (!cloudName || !apiKey || !apiSecret) {
-      console.error('Missing Cloudinary credentials')
+    if (!firebaseApiKey || !firebaseStorageBucket) {
+      console.error('Missing Firebase credentials')
       return new Response(
-        JSON.stringify({ error: 'Cloudinary credentials not configured' }),
+        JSON.stringify({ error: 'Firebase credentials not configured' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Create signature for authenticated upload
-    const timestamp = Math.round(Date.now() / 1000)
-    const publicId = `media2link_${crypto.randomUUID()}`
+    // Convert file to base64 for Firebase upload
+    const fileBuffer = await file.arrayBuffer()
+    const fileBytes = new Uint8Array(fileBuffer)
+    const base64File = btoa(String.fromCharCode(...fileBytes))
     
-    // Create signature string
-    const stringToSign = `public_id=${publicId}&timestamp=${timestamp}${apiSecret}`
+    // Generate unique filename
+    const timestamp = Date.now()
+    const randomId = crypto.randomUUID().split('-')[0]
+    const fileName = `media2link_${timestamp}_${randomId}_${file.name}`
     
-    // Create signature using Web Crypto API
-    const encoder = new TextEncoder()
-    const signData = encoder.encode(stringToSign)
-    const hashBuffer = await crypto.subtle.digest('SHA-1', signData)
-    const hashArray = Array.from(new Uint8Array(hashBuffer))
-    const signature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+    console.log('Uploading to Firebase Storage...')
+    
+    // Upload to Firebase Storage using REST API
+    const firebaseUploadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o?uploadType=media&name=${encodeURIComponent(fileName)}`
+    
+    const firebaseResponse = await fetch(firebaseUploadUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type,
+        'Authorization': `Bearer ${firebaseApiKey}`,
+      },
+      body: fileBytes,
+    })
 
-    // Upload to Cloudinary
-    const uploadFormData = new FormData()
-    uploadFormData.append('file', file)
-    uploadFormData.append('public_id', publicId)
-    uploadFormData.append('timestamp', timestamp.toString())
-    uploadFormData.append('api_key', apiKey)
-    uploadFormData.append('signature', signature)
+    console.log('Firebase response status:', firebaseResponse.status)
     
-    console.log('Uploading to Cloudinary...')
-    
-    const cloudinaryResponse = await fetch(
-      `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
-      {
-        method: 'POST',
-        body: uploadFormData,
-      }
+    if (!firebaseResponse.ok) {
+      const errorText = await firebaseResponse.text()
+      console.error('Firebase upload failed:', errorText)
+      return new Response(
+        JSON.stringify({ error: 'Failed to upload to Firebase', details: errorText }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const firebaseData = await firebaseResponse.json()
+    console.log('Firebase upload successful:', firebaseData.name)
+
+    // Get download URL from Firebase
+    const downloadUrlResponse = await fetch(
+      `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(fileName)}?alt=media&token=${firebaseApiKey}`
     )
 
-    console.log('Cloudinary response status:', cloudinaryResponse.status)
-    
-    const responseText = await cloudinaryResponse.text()
-    console.log('Cloudinary response:', responseText.substring(0, 200))
-
-    let cloudinaryData
-    try {
-      cloudinaryData = JSON.parse(responseText)
-    } catch (e) {
-      console.error('Failed to parse Cloudinary response:', e)
-      return new Response(
-        JSON.stringify({ error: 'Invalid response from Cloudinary' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!cloudinaryResponse.ok) {
-      console.error('Cloudinary upload failed:', cloudinaryData)
-      return new Response(
-        JSON.stringify({ error: 'Failed to upload to Cloudinary', details: cloudinaryData }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    const firebaseDownloadUrl = downloadUrlResponse.url
 
     // Generate unique access link
     const accessId = crypto.randomUUID().split('-')[0]
@@ -141,8 +128,8 @@ serve(async (req) => {
         file_name: file.name,
         file_type: file.type,
         file_size: file.size,
-        cloudinary_public_id: cloudinaryData.public_id,
-        cloudinary_url: cloudinaryData.secure_url,
+        cloudinary_public_id: firebaseData.name || fileName,
+        cloudinary_url: firebaseDownloadUrl,
         access_link: accessLink,
       })
       .select()
@@ -158,14 +145,11 @@ serve(async (req) => {
 
     console.log('File uploaded successfully:', dbData.id)
 
-    // Use Cloudinary URL as the shareable link
-    const shareUrl = cloudinaryData.secure_url
-
     return new Response(
       JSON.stringify({
         success: true,
         file: dbData,
-        shareUrl: shareUrl
+        shareUrl: firebaseDownloadUrl
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
