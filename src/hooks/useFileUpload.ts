@@ -39,17 +39,27 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
       console.log('Calling upload-media function...');
       
-      // Call the edge function using Supabase functions invoke
-      const { data, error: functionError } = await supabase.functions.invoke('upload-media', {
+      // Get auth token for the request
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // Call the edge function directly with fetch for FormData support
+      const response = await fetch(`https://nwepfribozwhpzwlpiuq.supabase.co/functions/v1/upload-media`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53ZXBmcmlib3p3aHB6d2xwaXVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkwNDAxMDIsImV4cCI6MjA2NDYxNjEwMn0.GG24EBS27xXPY9iva1_P7CNrOL_1lhsUmtign5IWwTA'}`,
+        },
         body: formData,
       });
 
-      console.log('Upload response:', { data, error: functionError });
+      console.log('Upload response status:', response.status);
       
-      if (functionError) {
-        console.error('Upload failed:', functionError);
-        throw new Error(`Upload failed: ${functionError.message}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Upload failed:', errorText);
+        throw new Error(`Upload failed: ${errorText}`);
       }
+
+      const data = await response.json();
       console.log('Upload response data:', data);
       
       if (!data || !data.success || !data.file) {
