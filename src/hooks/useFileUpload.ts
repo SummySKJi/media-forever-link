@@ -39,24 +39,17 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
       console.log('Calling upload-media function...');
       
-      // Call the edge function directly with fetch for FormData
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/upload-media`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
-        },
+      // Call the edge function using Supabase functions invoke
+      const { data, error: functionError } = await supabase.functions.invoke('upload-media', {
         body: formData,
       });
 
-      console.log('Upload response status:', response.status);
+      console.log('Upload response:', { data, error: functionError });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Upload failed:', errorText);
-        throw new Error(`Upload failed: ${errorText}`);
+      if (functionError) {
+        console.error('Upload failed:', functionError);
+        throw new Error(`Upload failed: ${functionError.message}`);
       }
-
-      const data = await response.json();
       console.log('Upload response data:', data);
       
       if (!data || !data.success || !data.file) {
