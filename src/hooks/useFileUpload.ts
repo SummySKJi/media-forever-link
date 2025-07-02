@@ -78,7 +78,15 @@ export const useFileUpload = (): UseFileUploadReturn => {
       
       let errorMessage = "There was an error uploading your file. Please try again.";
       if (error instanceof Error) {
-        errorMessage = error.message;
+        if (error.message.includes('Firebase credentials')) {
+          errorMessage = "Firebase configuration error. Please check that Firebase credentials are properly set up.";
+        } else if (error.message.includes('Failed to upload to Firebase')) {
+          errorMessage = "Failed to upload to Firebase. Please check your Firebase configuration and try again.";
+        } else if (error.message.includes('Network')) {
+          errorMessage = "Network error. Please check your connection and try again.";
+        } else {
+          errorMessage = error.message;
+        }
       }
       
       toast({

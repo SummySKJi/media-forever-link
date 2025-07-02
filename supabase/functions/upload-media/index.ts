@@ -50,9 +50,12 @@ serve(async (req) => {
     })
 
     if (!firebaseApiKey || !firebaseStorageBucket || !firebaseProjectId) {
-      console.error('Missing Firebase credentials')
+      console.error('Missing Firebase credentials. Available env vars:', Object.keys(Deno.env.toObject()))
       return new Response(
-        JSON.stringify({ error: 'Firebase credentials not configured' }),
+        JSON.stringify({ 
+          error: 'Firebase credentials not configured',
+          details: 'Please configure FIREBASE_API_KEY, FIREBASE_STORAGE_BUCKET, and FIREBASE_PROJECT_ID in Supabase secrets'
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
