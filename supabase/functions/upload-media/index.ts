@@ -38,14 +38,75 @@ serve(async (req) => {
       )
     }
 
-    // Generate unique filename
+    // Get Cloudinary credentials
+    const cloudinaryCloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')
+    const cloudinaryApiKey = Deno.env.get('CLOUDINARY_API_KEY')
+    const cloudinaryApiSecret = Deno.env.get('CLOUDINARY_API_SECRET')
+    
+    if (!cloudinaryCloudName || !cloudinaryApiKey || !cloudinaryApiSecret) {
+      console.error('Missing Cloudinary credentials')
+      return new Response(
+        JSON.stringify({ error: 'Cloudinary configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Generate unique public ID
     const timestamp = Date.now()
     const randomId = crypto.randomUUID().split('-')[0]
-    const fileName = `media2link_${timestamp}_${randomId}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+    const publicId = `media2link_${timestamp}_${randomId}`
     
-    console.log('Uploading to Supabase Storage:', fileName)
+    console.log('Uploading to Cloudinary:', publicId)
     
-    // Get Supabase credentials
+    // Convert file to array buffer
+    const fileBuffer = await file.arrayBuffer()
+    const fileBase64 = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)))
+    
+    // Upload to Cloudinary
+    const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/upload`
+    
+    const formData = new FormData()
+    formData.append('file', `data:${file.type};base64,${fileBase64}`)
+    formData.append('public_id', publicId)
+    formData.append('api_key', cloudinaryApiKey)
+    
+    // Generate signature for Cloudinary
+    const timestamp_signature = Math.round(Date.now() / 1000)
+    const stringToSign = `public_id=${publicId}&timestamp=${timestamp_signature}${cloudinaryApiSecret}`
+    const signature = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(stringToSign))
+    const signatureHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
+    
+    formData.append('timestamp', timestamp_signature.toString())
+    formData.append('signature', signatureHex)
+
+    const cloudinaryResponse = await fetch(cloudinaryUrl, {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!cloudinaryResponse.ok) {
+      const errorText = await cloudinaryResponse.text()
+      console.error('Cloudinary upload failed:', errorText)
+      return new Response(
+        JSON.stringify({ error: 'Failed to upload to Cloudinary', details: errorText }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const cloudinaryData = await cloudinaryResponse.json()
+    console.log('Cloudinary upload successful:', cloudinaryData.public_id)
+
+    const publicUrl = cloudinaryData.secure_url
+
+    // Generate unique access link
+    const accessId = crypto.randomUUID().split('-')[0]
+    const accessLink = `${accessId}`
+
+    console.log('Generated access link:', accessLink)
+
+    console.log('Saving to Supabase database...')
+
+    // Get Supabase credentials for database operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
     
@@ -59,49 +120,13 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Convert file to array buffer
-    const fileBuffer = await file.arrayBuffer()
-    
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('media-files')
-      .upload(fileName, fileBuffer, {
-        contentType: file.type,
-        upsert: false
-      })
-
-    if (uploadError) {
-      console.error('Supabase upload failed:', uploadError)
-      return new Response(
-        JSON.stringify({ error: 'Failed to upload to Supabase Storage', details: uploadError.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    console.log('Supabase upload successful:', uploadData.path)
-
-    // Generate public URL
-    const { data: urlData } = supabase.storage
-      .from('media-files')
-      .getPublicUrl(fileName)
-    
-    const publicUrl = urlData.publicUrl
-
-    // Generate unique access link
-    const accessId = crypto.randomUUID().split('-')[0]
-    const accessLink = `${accessId}`
-
-    console.log('Generated access link:', accessLink)
-
-    console.log('Saving to Supabase database...')
-
     const { data: dbData, error } = await supabase
       .from('media_files')
       .insert({
         file_name: file.name,
         file_type: file.type,
         file_size: file.size,
-        cloudinary_public_id: fileName,
+        cloudinary_public_id: publicId,
         cloudinary_url: publicUrl,
         access_link: accessLink,
       })

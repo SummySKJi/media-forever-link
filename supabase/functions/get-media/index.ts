@@ -93,25 +93,22 @@ serve(async (req) => {
       )
     }
 
-    // Verify Supabase Storage file still exists and update URL if needed
+    // Return the file data with Cloudinary URL
     if (data.cloudinary_public_id) {
       try {
-        console.log('Verifying file exists in Supabase Storage:', data.cloudinary_public_id)
+        console.log('Verifying Cloudinary file exists:', data.cloudinary_public_id)
         
-        // Get fresh public URL from Supabase Storage
-        const { data: urlData } = supabase.storage
-          .from('media-files')
-          .getPublicUrl(data.cloudinary_public_id)
+        // Verify Cloudinary file exists by making a HEAD request
+        const cloudinaryResponse = await fetch(data.cloudinary_url, { method: 'HEAD' })
         
-        if (urlData?.publicUrl) {
-          console.log('File verified in Supabase Storage')
-          data.cloudinary_url = urlData.publicUrl
+        if (cloudinaryResponse.ok) {
+          console.log('File verified in Cloudinary')
         } else {
-          console.log('File not found in Supabase Storage, using stored URL')
+          console.log('File not accessible in Cloudinary, using stored URL')
         }
-      } catch (storageError) {
-        console.error('Supabase Storage verification error:', storageError)
-        // Continue with stored URL if storage check fails
+      } catch (cloudinaryError) {
+        console.error('Cloudinary verification error:', cloudinaryError)
+        // Continue with stored URL if verification fails
       }
     }
 
@@ -120,7 +117,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         file: data,
-        source: 'supabase'
+        source: 'cloudinary'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
