@@ -28,11 +28,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
     try {
       console.log('Starting file upload:', file.name, file.size, file.type);
       
-      // Validate file size on frontend too
-      const maxSize = 500 * 1024 * 1024; // 500MB
-      if (file.size > maxSize) {
-        throw new Error('File size exceeds 500MB limit');
-      }
+      // No file size limit
       
       const formData = new FormData();
       formData.append('file', file);

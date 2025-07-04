@@ -28,15 +28,7 @@ serve(async (req) => {
 
     console.log('File received:', file.name, file.size, file.type)
 
-    // Validate file size (max 500MB)
-    const maxSize = 500 * 1024 * 1024
-    if (file.size > maxSize) {
-      console.error('File too large:', file.size)
-      return new Response(
-        JSON.stringify({ error: 'File size exceeds 500MB limit' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // No file size limit - proceed with upload
 
     // Get Cloudinary credentials
     const cloudinaryCloudName = Deno.env.get('CLOUDINARY_CLOUD_NAME')

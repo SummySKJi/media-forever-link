@@ -98,7 +98,7 @@ const Index = () => {
                     </CardHeader>
                     <CardContent className="pt-0">
                       <p className="text-slate-600 text-center leading-relaxed">
-                        Drag & drop files up to 500MB. Support for all media formats including images, videos, audio, and documents.
+                        Drag & drop files of any size. Support for all media formats including images, videos, audio, and documents.
                       </p>
                     </CardContent>
                   </Card>

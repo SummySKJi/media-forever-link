@@ -73,7 +73,7 @@ const FileUploadZone = ({ onFileSelect, isUploading }: FileUploadZoneProps) => {
                 Drop your file here or click to browse
               </h3>
               <p className="text-gray-500 mb-6">
-                Support for images, videos, audio, and documents up to 500MB
+                Support for images, videos, audio, and documents - no size limit
               </p>
               
               <input
