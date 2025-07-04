@@ -93,28 +93,25 @@ serve(async (req) => {
       )
     }
 
-    // Verify Firebase file still exists
-    const firebaseStorageBucket = Deno.env.get('FIREBASE_STORAGE_BUCKET')
-    
-    if (firebaseStorageBucket && data.cloudinary_public_id) {
+    // Verify Supabase Storage file still exists and update URL if needed
+    if (data.cloudinary_public_id) {
       try {
-        console.log('Verifying file exists in Firebase:', data.cloudinary_public_id)
+        console.log('Verifying file exists in Supabase Storage:', data.cloudinary_public_id)
         
-        const firebaseCheckUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(data.cloudinary_public_id)}`
-        const firebaseCheckResponse = await fetch(firebaseCheckUrl)
+        // Get fresh public URL from Supabase Storage
+        const { data: urlData } = supabase.storage
+          .from('media-files')
+          .getPublicUrl(data.cloudinary_public_id)
         
-        if (firebaseCheckResponse.ok) {
-          console.log('File verified in Firebase')
-          const firebaseDownloadUrl = `https://firebasestorage.googleapis.com/v0/b/${firebaseStorageBucket}/o/${encodeURIComponent(data.cloudinary_public_id)}?alt=media`
-          
-          // Update the URL to Firebase download URL
-          data.cloudinary_url = firebaseDownloadUrl
+        if (urlData?.publicUrl) {
+          console.log('File verified in Supabase Storage')
+          data.cloudinary_url = urlData.publicUrl
         } else {
-          console.log('File not found in Firebase, using stored URL')
+          console.log('File not found in Supabase Storage, using stored URL')
         }
-      } catch (firebaseError) {
-        console.error('Firebase verification error:', firebaseError)
-        // Continue with stored URL if Firebase check fails
+      } catch (storageError) {
+        console.error('Supabase Storage verification error:', storageError)
+        // Continue with stored URL if storage check fails
       }
     }
 
@@ -123,7 +120,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         file: data,
-        source: 'firebase'
+        source: 'supabase'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

@@ -78,10 +78,8 @@ export const useFileUpload = (): UseFileUploadReturn => {
       
       let errorMessage = "There was an error uploading your file. Please try again.";
       if (error instanceof Error) {
-        if (error.message.includes('Firebase credentials')) {
-          errorMessage = "Firebase configuration error. Please check that Firebase credentials are properly set up.";
-        } else if (error.message.includes('Failed to upload to Firebase')) {
-          errorMessage = "Failed to upload to Firebase. Please check your Firebase configuration and try again.";
+        if (error.message.includes('Supabase Storage')) {
+          errorMessage = "Storage upload failed. Please try again.";
         } else if (error.message.includes('Network')) {
           errorMessage = "Network error. Please check your connection and try again.";
         } else {
