@@ -33,9 +33,12 @@ const FileUploadZone = ({ onFileSelect, isUploading }: FileUploadZoneProps) => {
   }, [onFileSelect]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault(); // Prevent any default form submission
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       onFileSelect(files[0]);
+      // Clear the input value to allow selecting the same file again
+      e.target.value = '';
     }
   }, [onFileSelect]);
 
