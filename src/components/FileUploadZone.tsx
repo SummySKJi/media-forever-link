@@ -4,12 +4,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, FileText, Image, Video, Music, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface UploadProgress {
+  step: string;
+  progress: number;
+  timeElapsed: number;
+  estimatedTimeRemaining: number;
+  fileSize: number;
+  fileName: string;
+}
+
 interface FileUploadZoneProps {
   onFileSelect: (file: File) => void;
   isUploading: boolean;
+  uploadProgress?: UploadProgress | null;
 }
 
-const FileUploadZone = ({ onFileSelect, isUploading }: FileUploadZoneProps) => {
+const FileUploadZone = ({ onFileSelect, isUploading, uploadProgress }: FileUploadZoneProps) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -50,6 +60,20 @@ const FileUploadZone = ({ onFileSelect, isUploading }: FileUploadZoneProps) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const formatTime = (milliseconds: number) => {
+    const seconds = Math.floor(milliseconds / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m ${seconds % 60}s`;
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`;
+    } else {
+      return `${seconds}s`;
+    }
+  };
+
   return (
     <Card className={cn(
       "bg-white/70 backdrop-blur-sm border-2 border-dashed transition-all duration-300 hover:shadow-xl",
@@ -63,7 +87,39 @@ const FileUploadZone = ({ onFileSelect, isUploading }: FileUploadZoneProps) => {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {isUploading ? (
+          {isUploading && uploadProgress ? (
+            <div className="space-y-6">
+              <Loader2 className="w-16 h-16 text-blue-500 mx-auto animate-spin" />
+              <div className="space-y-4">
+                <h3 className="text-2xl font-semibold text-gray-700">{uploadProgress.step}</h3>
+                
+                {/* Progress Bar */}
+                <div className="w-full max-w-md mx-auto">
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>{uploadProgress.progress}%</span>
+                    <span>{formatFileSize(uploadProgress.fileSize)}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress.progress}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* File Info */}
+                <div className="text-center space-y-2">
+                  <p className="text-gray-600 font-medium">{uploadProgress.fileName}</p>
+                  <div className="flex justify-center gap-6 text-sm text-gray-500">
+                    <span>Elapsed: {formatTime(uploadProgress.timeElapsed)}</span>
+                    {uploadProgress.progress < 100 && uploadProgress.estimatedTimeRemaining > 0 && (
+                      <span>Remaining: {formatTime(uploadProgress.estimatedTimeRemaining)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : isUploading ? (
             <div className="space-y-4">
               <Loader2 className="w-16 h-16 text-blue-500 mx-auto animate-spin" />
               <h3 className="text-2xl font-semibold text-gray-700">Uploading your file...</h3>

@@ -13,20 +13,51 @@ interface UploadedFile {
   uploaded_at: string;
 }
 
+interface UploadProgress {
+  step: string;
+  progress: number;
+  timeElapsed: number;
+  estimatedTimeRemaining: number;
+  fileSize: number;
+  fileName: string;
+}
+
 interface UseFileUploadReturn {
   uploadFile: (file: File) => Promise<{ file: UploadedFile; shareUrl: string } | null>;
   isUploading: boolean;
+  uploadProgress: UploadProgress | null;
 }
 
 export const useFileUpload = (): UseFileUploadReturn => {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
   const { toast } = useToast();
+
+  const updateProgress = (step: string, progress: number, startTime: number, file: File) => {
+    const timeElapsed = Date.now() - startTime;
+    const estimatedTotal = timeElapsed / (progress / 100);
+    const estimatedTimeRemaining = Math.max(0, estimatedTotal - timeElapsed);
+    
+    setUploadProgress({
+      step,
+      progress,
+      timeElapsed,
+      estimatedTimeRemaining,
+      fileSize: file.size,
+      fileName: file.name
+    });
+  };
 
   const uploadFile = async (file: File): Promise<{ file: UploadedFile; shareUrl: string } | null> => {
     setIsUploading(true);
+    const startTime = Date.now();
     
     try {
       console.log('Starting file upload:', file.name, file.size, file.type);
+      
+      // Step 1: Preparing upload
+      updateProgress('Preparing file upload...', 10, startTime, file);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Small delay for visual feedback
       
       // No file size limit
       
@@ -34,6 +65,9 @@ export const useFileUpload = (): UseFileUploadReturn => {
       formData.append('file', file);
 
       console.log('Calling upload-media function...');
+      
+      // Step 2: Uploading to cloud
+      updateProgress('Uploading to cloud storage...', 25, startTime, file);
       
       // Get auth token for the request
       const { data: { session } } = await supabase.auth.getSession();
@@ -47,6 +81,9 @@ export const useFileUpload = (): UseFileUploadReturn => {
         body: formData,
       });
 
+      // Step 3: Processing upload
+      updateProgress('Processing upload...', 70, startTime, file);
+
       console.log('Upload response status:', response.status);
       
       if (!response.ok) {
@@ -55,6 +92,9 @@ export const useFileUpload = (): UseFileUploadReturn => {
         throw new Error(`Upload failed: ${errorText}`);
       }
 
+      // Step 4: Finalizing
+      updateProgress('Finalizing upload...', 90, startTime, file);
+
       const data = await response.json();
       console.log('Upload response data:', data);
       
@@ -62,6 +102,9 @@ export const useFileUpload = (): UseFileUploadReturn => {
         console.error('Invalid response from server:', data);
         throw new Error('Invalid response from server');
       }
+
+      // Step 5: Complete
+      updateProgress('Upload complete!', 100, startTime, file);
 
       toast({
         title: "Upload Successful!",
@@ -91,8 +134,9 @@ export const useFileUpload = (): UseFileUploadReturn => {
       return null;
     } finally {
       setIsUploading(false);
+      setUploadProgress(null);
     }
   };
 
-  return { uploadFile, isUploading };
+  return { uploadFile, isUploading, uploadProgress };
 };

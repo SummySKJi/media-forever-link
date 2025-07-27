@@ -12,7 +12,7 @@ import { useFileUpload } from '@/hooks/useFileUpload';
 const Index = () => {
   const [uploadedFile, setUploadedFile] = useState(null);
   const [shareableUrl, setShareableUrl] = useState('');
-  const { uploadFile, isUploading } = useFileUpload();
+  const { uploadFile, isUploading, uploadProgress } = useFileUpload();
 
   const handleFileUpload = async (file) => {
     console.log('File selected for upload:', file.name, file.size, file.type);
@@ -74,6 +74,7 @@ const Index = () => {
                 <FileUploadZone 
                   onFileSelect={handleFileUpload} 
                   isUploading={isUploading}
+                  uploadProgress={uploadProgress}
                 />
               </section>
               
