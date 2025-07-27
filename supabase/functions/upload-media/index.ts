@@ -50,9 +50,18 @@ serve(async (req) => {
     
     console.log('Uploading to Cloudinary:', publicId)
     
-    // Convert file to array buffer
+    // Convert file to array buffer and then to base64 safely
     const fileBuffer = await file.arrayBuffer()
-    const fileBase64 = btoa(String.fromCharCode(...new Uint8Array(fileBuffer)))
+    
+    // Use a more efficient method for large files
+    const uint8Array = new Uint8Array(fileBuffer)
+    let binary = ''
+    const chunkSize = 8192
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize)
+      binary += String.fromCharCode(...chunk)
+    }
+    const fileBase64 = btoa(binary)
     
     // Upload to Cloudinary
     const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/upload`
@@ -123,12 +132,12 @@ serve(async (req) => {
         access_link: accessLink,
       })
       .select()
-      .single()
+      .maybeSingle()
 
-    if (error) {
+    if (error || !dbData) {
       console.error('Database error:', error)
       return new Response(
-        JSON.stringify({ error: 'Failed to save file metadata', details: error.message }),
+        JSON.stringify({ error: 'Failed to save file metadata', details: error?.message || 'No data returned' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
