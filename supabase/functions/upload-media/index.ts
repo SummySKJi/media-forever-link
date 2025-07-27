@@ -57,10 +57,10 @@ serve(async (req) => {
     // Upload to Cloudinary
     const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/upload`
     
-    const formData = new FormData()
-    formData.append('file', `data:${file.type};base64,${fileBase64}`)
-    formData.append('public_id', publicId)
-    formData.append('api_key', cloudinaryApiKey)
+    const cloudinaryFormData = new FormData()
+    cloudinaryFormData.append('file', `data:${file.type};base64,${fileBase64}`)
+    cloudinaryFormData.append('public_id', publicId)
+    cloudinaryFormData.append('api_key', cloudinaryApiKey)
     
     // Generate signature for Cloudinary
     const timestamp_signature = Math.round(Date.now() / 1000)
@@ -68,12 +68,12 @@ serve(async (req) => {
     const signature = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(stringToSign))
     const signatureHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('')
     
-    formData.append('timestamp', timestamp_signature.toString())
-    formData.append('signature', signatureHex)
+    cloudinaryFormData.append('timestamp', timestamp_signature.toString())
+    cloudinaryFormData.append('signature', signatureHex)
 
     const cloudinaryResponse = await fetch(cloudinaryUrl, {
       method: 'POST',
-      body: formData,
+      body: cloudinaryFormData,
     })
 
     if (!cloudinaryResponse.ok) {
