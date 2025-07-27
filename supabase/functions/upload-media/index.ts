@@ -50,24 +50,11 @@ serve(async (req) => {
     
     console.log('Uploading to Cloudinary:', publicId)
     
-    // Convert file to array buffer and then to base64 safely
-    const fileBuffer = await file.arrayBuffer()
-    
-    // Use a more efficient method for large files
-    const uint8Array = new Uint8Array(fileBuffer)
-    let binary = ''
-    const chunkSize = 8192
-    for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.slice(i, i + chunkSize)
-      binary += String.fromCharCode(...chunk)
-    }
-    const fileBase64 = btoa(binary)
-    
-    // Upload to Cloudinary
+    // Use direct file upload to Cloudinary instead of base64 conversion
     const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudinaryCloudName}/upload`
     
     const cloudinaryFormData = new FormData()
-    cloudinaryFormData.append('file', `data:${file.type};base64,${fileBase64}`)
+    cloudinaryFormData.append('file', file)  // Upload file directly without base64 conversion
     cloudinaryFormData.append('public_id', publicId)
     cloudinaryFormData.append('api_key', cloudinaryApiKey)
     
@@ -80,6 +67,7 @@ serve(async (req) => {
     cloudinaryFormData.append('timestamp', timestamp_signature.toString())
     cloudinaryFormData.append('signature', signatureHex)
 
+    console.log('Starting Cloudinary upload...')
     const cloudinaryResponse = await fetch(cloudinaryUrl, {
       method: 'POST',
       body: cloudinaryFormData,

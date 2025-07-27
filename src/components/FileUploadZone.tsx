@@ -81,7 +81,7 @@ const FileUploadZone = ({ onFileSelect, isUploading }: FileUploadZoneProps) => {
                 onChange={handleFileSelect}
                 className="hidden"
                 id="file-upload"
-                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+                accept="*/*"
               />
               
               <label
